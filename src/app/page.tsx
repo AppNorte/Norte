@@ -1,0 +1,39 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Backdrop } from "@/components/Backdrop";
+import { Compass } from "@/components/Compass";
+import { Cta } from "@/components/ui";
+import { useStore } from "@/store/StoreProvider";
+
+export default function Splash() {
+  const { state, hydrated } = useStore();
+  const router = useRouter();
+
+  // Quem já configurou vai direto para Hoje.
+  useEffect(() => {
+    if (hydrated && state) router.replace("/hoje");
+  }, [hydrated, state, router]);
+
+  return (
+    <main className="splash">
+      <Backdrop variant="splash" className="hero-backdrop" />
+      <div className="splash-mark">
+        <Compass size={150} />
+      </div>
+      <h1 className="splash-word">NORTE</h1>
+      <p className="splash-tag">
+        Direção para uma vida
+        <br />
+        com propósito.
+      </p>
+      <div className="splash-foot">
+        <Cta href="/onboarding">Começar</Cta>
+        <p className="splash-pillars" aria-label="Rotina, Leitura, Família, IA">
+          Rotina<span>•</span>Leitura<span>•</span>Família<span>•</span>IA
+        </p>
+      </div>
+    </main>
+  );
+}

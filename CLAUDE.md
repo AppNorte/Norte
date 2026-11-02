@@ -1,0 +1,58 @@
+# Instruções para Claude Code — Projeto NORTE
+
+Você está trabalhando no aplicativo **NORTE**.
+
+Leia nesta ordem antes de alterar código:
+
+1. `docs/PRODUCT_SPEC.md`
+2. `docs/SCREEN_SPECS.md`
+3. `docs/USER_FLOWS.md`
+4. `docs/DESIGN_SYSTEM.md`
+5. `docs/DATABASE_SCHEMA.md`
+6. `docs/AI_ASSISTANT_SPEC.md`
+7. `docs/ACCEPTANCE_TESTS.md`
+8. os mockups em `mockups/`
+
+## Objetivo
+
+Construir uma PWA mobile-first de organização pessoal baseada em cinco pilares:
+
+- Hoje
+- Rotina
+- Leitura
+- Família
+- Assistente NORTE
+
+Existe também a tela secundária `Meu dia` e um onboarding inicial.
+
+## Regras obrigatórias
+
+- Não invente novos módulos na V1.
+- Não transforme o app em ERP, CRM, financeiro ou app da DaylinTech nesta fase.
+- Preserve o design premium, calmo e minimalista dos mockups.
+- Priorize Android mobile e telas estreitas, mas mantenha responsividade desktop.
+- O menu principal deve ter: Hoje, Rotina, Leitura, Família, Assistente.
+- A IA deve operar por ferramentas autorizadas; não pode alterar banco diretamente.
+- Toda ação destrutiva ou de alteração importante feita pela IA deve pedir confirmação.
+- API keys somente no servidor / variáveis de ambiente.
+- Não use dados sensíveis do histórico do usuário além do que estiver explicitamente no `seed.example.json`.
+- Datas, horários e conteúdos de exemplo devem ser editáveis; não devem ficar hardcoded como regra do produto.
+- A V1 deve continuar útil mesmo se a IA estiver indisponível.
+
+## Estratégia de implementação
+
+1. Primeiro, faça os layouts funcionarem exatamente e a navegação estar sólida.
+2. Depois, implemente estado local com persistência.
+3. Só então conecte Supabase.
+4. Depois conecte a IA.
+5. Por fim, notificações/PWA e testes.
+
+## Critério de qualidade
+
+O usuário deve abrir o app e entender em menos de 10 segundos:
+
+- o que precisa fazer agora;
+- o que falta na rotina;
+- o que ler hoje;
+- se há algo importante com a família;
+- como falar com o Assistente NORTE.

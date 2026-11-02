@@ -1,0 +1,49 @@
+{
+  "profile": {
+    "displayName": "Daylerson",
+    "wakeGoal": "05:00",
+    "sleepGoal": "22:30",
+    "locale": "pt-BR"
+  },
+  "routine": {
+    "morning": [
+      {"time":"05:00","title":"Acordar"},
+      {"time":"05:30","title":"Academia"},
+      {"time":"07:00","title":"Banho"},
+      {"time":"07:20","title":"Café"},
+      {"time":"07:40","title":"Bíblia"},
+      {"time":"08:00","title":"Livro"}
+    ],
+    "evening": [
+      {"time":"21:45","title":"Guardar celular / reduzir distrações"},
+      {"time":"21:50","title":"Preparar roupa da academia"},
+      {"time":"21:55","title":"Deixar água pronta"},
+      {"time":"22:30","title":"Dormir"}
+    ]
+  },
+  "priorities": [
+    "Definir três prioridades do dia",
+    "Manter leitura planejada",
+    "Separar tempo de qualidade com a família"
+  ],
+  "reading": {
+    "bible": {
+      "planTitle": "Evangelho de João",
+      "book": "João",
+      "currentChapter": 1,
+      "totalChapters": 21
+    },
+    "book": {
+      "title": "Livro atual",
+      "author": "",
+      "currentPage": 0,
+      "pagesPerDay": 10,
+      "status": "current"
+    }
+  },
+  "family": [
+    {"name":"Bia","relationship":"Esposa","sortOrder":1},
+    {"name":"Isabella","relationship":"Filha","sortOrder":2},
+    {"name":"Davi","relationship":"Filho","sortOrder":3}
+  ]
+}
