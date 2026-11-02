@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Field, Modal, Toggle, useToast } from "@/components/ui";
 import { CatDot } from "./FinIcon";
@@ -8,6 +8,14 @@ import { addDays, toDateKey } from "@/lib/dates";
 import { addTransaction, centsToInput, deleteTransaction, money, parseMoney, updateTransaction } from "@/lib/finance/logic";
 import type { Transaction, TxKind } from "@/lib/types";
 import { useAppState } from "@/store/StoreProvider";
+import { ReceiptCapture } from "./ReceiptCapture";
+import { blobToBase64, deleteFile, getFile, putFile } from "@/lib/files";
+import { decodeQrFromBlob } from "@/lib/qr";
+import { parseNfceQr, type NfceDetails } from "@/lib/nfce";
+import { guessCategory } from "@/lib/finance/categorize";
+import { dateInMonth } from "@/lib/finance/logic";
+import { addItemsToPantry } from "@/lib/pantry";
+import { uid } from "@/lib/id";
 
 type Kind = Exclude<TxKind, "card_payment">;
 
@@ -44,6 +52,107 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
   const [repeat, setRepeat] = useState(false);
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Nota fiscal
+  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [keepAttachment, setKeepAttachment] = useState(Boolean(editing?.attachmentId));
+  const [nfce, setNfce] = useState<{ chave: string; url: string } | null>(editing?.nfce ?? null);
+  const [items, setItems] = useState<NfceDetails["items"]>([]);
+  const [toPantry, setToPantry] = useState(true);
+  const [rBusy, setRBusy] = useState(false);
+  const [rStatus, setRStatus] = useState<string | null>(null);
+  const [aiAvailable, setAiAvailable] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/receipt")
+      .then((r) => r.json())
+      .then((j: { ai?: boolean }) => setAiAvailable(Boolean(j.ai)))
+      .catch(() => setAiAvailable(false));
+  }, []);
+
+  // Foto já salva (edição)
+  useEffect(() => {
+    if (!editing?.attachmentId) return;
+    let url: string | null = null;
+    getFile(editing.attachmentId)
+      .then((b) => {
+        if (b) {
+          url = URL.createObjectURL(b);
+          setPhotoUrl(url);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [editing?.attachmentId]);
+
+  const applyDetails = (d: NfceDetails, fromAi = false) => {
+    if (d.total) setAmount(centsToInput(d.total));
+    if (d.date) setDate(d.date);
+    if (d.store) {
+      const store = d.store.length > 40 ? d.store.slice(0, 40) : d.store;
+      setDescription((x) => x || store.charAt(0) + store.slice(1).toLowerCase());
+      const cat = guessCategory(`${d.store} ${d.items.map((i) => i.name).join(" ")}`, "expense", f.categories) ?? (d.items.length >= 3 ? (f.categories.find((c) => c.kind === "expense" && c.name === "Mercado")?.id ?? null) : null);
+      if (cat) setCategoryId((x) => x ?? cat);
+    }
+    setItems(d.items ?? []);
+    setRStatus(`${fromAi ? "Lido pela IA" : "Nota encontrada"}${d.store ? `: ${d.store}` : ""}${d.total ? ` · ${money(d.total)}` : ""}. Confira os campos.`);
+  };
+
+  const handleQr = async (text: string) => {
+    const q = parseNfceQr(text);
+    if (!q) {
+      setRStatus("Esse QR Code não é de uma nota fiscal.");
+      return;
+    }
+    setKind("expense");
+    setNfce({ chave: q.chave, url: q.url });
+    if (q.total) setAmount(centsToInput(q.total));
+    if (q.month && q.day) setDate(dateInMonth(q.month, q.day));
+    setRBusy(true);
+    setRStatus("Nota encontrada. Buscando valor e itens na Sefaz…");
+    try {
+      const r = await fetch("/api/nfce", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: q.url }), signal: AbortSignal.timeout(20_000) });
+      const j = (await r.json()) as NfceDetails & { error?: string };
+      if (!r.ok) throw new Error(j.error);
+      applyDetails(j);
+    } catch (e) {
+      setRStatus(`${e instanceof Error && e.message ? e.message : "Não consegui abrir a nota na Sefaz."} A nota ficou guardada; ${q.total ? "o valor já foi preenchido." : "digite o valor."}`);
+    } finally {
+      setRBusy(false);
+    }
+  };
+
+  const readWithAi = async (blob = photo) => {
+    if (!blob) return;
+    setRBusy(true);
+    setRStatus("Lendo a nota com IA…");
+    try {
+      const r = await fetch("/api/receipt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image: await blobToBase64(blob) }), signal: AbortSignal.timeout(50_000) });
+      const j = (await r.json()) as NfceDetails & { error?: string };
+      if (!r.ok) throw new Error(j.error);
+      applyDetails(j, true);
+    } catch (e) {
+      setRStatus(e instanceof Error && e.message ? e.message : "Não consegui ler a foto.");
+    } finally {
+      setRBusy(false);
+    }
+  };
+
+  const handlePhoto = async (blob: Blob) => {
+    setPhoto(blob);
+    setKeepAttachment(false);
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+    setPhotoUrl(URL.createObjectURL(blob));
+    setRBusy(true);
+    setRStatus("Procurando o QR Code na foto…");
+    const qr = await decodeQrFromBlob(blob).catch(() => null);
+    setRBusy(false);
+    if (qr && parseNfceQr(qr)) return handleQr(qr);
+    if (aiAvailable) return readWithAi(blob);
+    setRStatus("Foto anexada. Não achei um QR Code legível; preencha o valor.");
+  };
 
   const cats = f.categories.filter((c) => c.kind === (kind === "income" ? "income" : "expense"));
   const isCard = kind === "expense" && source.startsWith("card:");
@@ -60,6 +169,12 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
       toast("Escolha contas de origem e destino diferentes.");
       return;
     }
+    let attachmentId: string | null = keepAttachment ? (editing?.attachmentId ?? null) : null;
+    if (photo) {
+      attachmentId = uid();
+      void putFile(attachmentId, photo).catch(() => toast("Não consegui guardar a foto neste aparelho."));
+    }
+    if (editing?.attachmentId && editing.attachmentId !== attachmentId) void deleteFile(editing.attachmentId).catch(() => {});
     const desc = description.trim() || (kind === "transfer" ? "Transferência" : (cats.find((c) => c.id === categoryId)?.name ?? (kind === "income" ? "Receita" : "Despesa")));
     if (editing) {
       mutate((d) =>
@@ -73,6 +188,8 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
           accountId: isCard ? null : sourceId,
           cardId: isCard ? sourceId : null,
           toAccountId: kind === "transfer" ? toAccount : null,
+          attachmentId,
+          nfce,
         }),
       );
       toast("Lançamento atualizado.");
@@ -91,8 +208,11 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
           installments: kind === "expense" ? installments : 1,
           repeatMonthly: repeat && installments === 1 && kind !== "transfer",
           notes,
+          attachmentId,
+          nfce,
         }),
       );
+      if (items.length && toPantry) mutate((d) => addItemsToPantry(d, items, date));
       toast(installments > 1 ? `Lançado em ${installments}x de ${money(Math.floor(cents / installments))}.` : "Lançamento salvo.");
     }
     onClose();
@@ -125,6 +245,37 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
             </button>
           ))}
         </div>
+      )}
+
+      {kind === "expense" && (
+        <>
+          <ReceiptCapture
+            photoUrl={photoUrl}
+            busy={rBusy}
+            status={rStatus}
+            aiAvailable={aiAvailable}
+            nfceUrl={nfce?.url ?? null}
+            onPhoto={handlePhoto}
+            onQr={handleQr}
+            onAi={() => void readWithAi()}
+            onRemove={() => {
+              setPhoto(null);
+              setKeepAttachment(false);
+              if (photoUrl) URL.revokeObjectURL(photoUrl);
+              setPhotoUrl(null);
+              setRStatus(null);
+            }}
+          />
+          {items.length > 0 && !editing && (
+            <label className="row" style={{ borderBottom: 0, cursor: "pointer" }}>
+              <span className="row-main" style={{ fontSize: 15 }}>
+                Guardar {items.length} itens na despensa
+                <small>{items.slice(0, 4).map((i) => i.name.toLowerCase()).join(", ")}{items.length > 4 ? "…" : ""}</small>
+              </span>
+              <Toggle checked={toPantry} onChange={() => setToPantry((v) => !v)} label="Guardar itens na despensa" />
+            </label>
+          )}
+        </>
       )}
 
       <label className={`money-input money-${kind}`}>
@@ -270,6 +421,7 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
                   className="btn danger sm"
                   onClick={() => {
                     mutate((d) => deleteTransaction(d, editing.id, "one"));
+                    if (editing.attachmentId && !s.finance.transactions.some((t) => t.id !== editing.id && t.attachmentId === editing.attachmentId)) void deleteFile(editing.attachmentId).catch(() => {});
                     toast("Lançamento excluído.");
                     onClose();
                   }}

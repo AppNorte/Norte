@@ -208,6 +208,8 @@ export interface TxInput {
   installments?: number; // 1 = à vista
   repeatMonthly?: boolean;
   notes?: string;
+  attachmentId?: string | null;
+  nfce?: { chave: string; url: string } | null;
 }
 
 function baseTx(i: TxInput): Transaction {
@@ -227,6 +229,8 @@ function baseTx(i: TxInput): Transaction {
     recurringId: null,
     notes: i.notes?.trim() ?? "",
     createdAt: new Date().toISOString(),
+    attachmentId: i.attachmentId ?? null,
+    nfce: i.nfce ?? null,
   };
 }
 

@@ -233,6 +233,8 @@ export interface Transaction {
   recurringId: string | null;
   notes: string;
   createdAt: string;
+  attachmentId?: string | null; // foto da nota (IndexedDB do aparelho)
+  nfce?: { chave: string; url: string } | null; // NFC-e lida pelo QR Code
 }
 
 export interface Recurring {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Paperclip, Pencil, Plus, Search } from "lucide-react";
 import { Bar, Field, Modal, useToast } from "@/components/ui";
 import { ACCOUNT_TYPE_LABEL, AccountIcon, CATEGORY_ICONS, CatDot, FinIcon } from "./FinIcon";
 import { ACCOUNT_COLORS } from "@/lib/finance/defaults";
@@ -48,6 +48,7 @@ export function TxRow({ t, onOpen, hide }: { t: Transaction; onOpen: () => void;
         <span className="tx-title">
           {t.description}
           {t.installment && <em> {t.installment.n}/{t.installment.total}</em>}
+          {(t.attachmentId || t.nfce) && <Paperclip size={13} className="clip" aria-label="Com nota fiscal" />}
         </span>
         <small>
           {cat?.name ? `${cat.name} · ` : ""}

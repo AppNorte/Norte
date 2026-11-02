@@ -19,6 +19,15 @@ A sincronização guarda o estado inteiro do usuário em `app_state` (JSONB, com
 
 Contas com saldo, receitas, despesas e transferências (pagas ou pendentes), cartões de crédito (limite, fechamento, vencimento, fatura por mês e pagamento), compras parceladas, lançamentos fixos mensais, categorias com orçamento, previsão do fim do mês e contas a pagar e receber. Valores sempre em centavos (`src/lib/finance/logic.ts`).
 
+### Nota fiscal na despesa
+
+Em "Novo lançamento" (despesa): **Ler QR Code** (câmera ao vivo), **Tirar foto**, **Galeria** ou arrastar a imagem.
+- QR Code da NFC-e: lê a chave, o estado, a data (e o valor, no formato offline). O servidor (`/api/nfce`, só domínios `.gov.br`) abre a página pública da Sefaz e extrai loja, total e itens. O layout varia por estado, então é "melhor esforço": se falhar, a nota e o link ficam salvos.
+- Sem QR legível e com IA ligada: `/api/receipt` lê a foto (visão) e preenche loja, valor, data e itens.
+- Itens da nota podem ir direto para a despensa.
+- Fotos ficam no IndexedDB do aparelho (`src/lib/files.ts`) e ainda não entram no backup nem na nuvem.
+- `vercel.json` fixa as funções em São Paulo (`gru1`): as Sefaz costumam bloquear acessos de fora do Brasil.
+
 ## Casa / Despensa
 
 Estoque por local (despensa, geladeira, freezer…), categoria automática pelo nome, aviso do que está acabando e vencendo, lista de compras com preço, e "Concluir compra", que soma na despensa, guarda o histórico de preços e (opcional) lança o gasto em Finanças.

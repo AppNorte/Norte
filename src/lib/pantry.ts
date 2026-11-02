@@ -211,3 +211,23 @@ export function finishShopping(s: AppState, opts: FinishOptions) {
 export function shoppingTotal(list: ShopItem[]) {
   return list.filter((x) => x.checked && x.price).reduce((a, x) => a + (x.price ?? 0), 0);
 }
+
+/** Itens de uma nota fiscal → despensa (soma quantidades, guarda preço). */
+export function addItemsToPantry(s: AppState, items: { name: string; qty: number; unit: string; total: number | null }[], date = toDateKey()) {
+  for (const raw of items) {
+    const name = raw.name.trim().replace(/\s+/g, " ");
+    if (!name) continue;
+    const nice = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    const qty = raw.qty > 0 ? raw.qty : 1;
+    const unit = UNITS.includes(raw.unit) ? raw.unit : "un";
+    const unitPrice = raw.total ? Math.round(raw.total / qty) : null;
+    if (unitPrice) s.pantry.prices.push({ name: norm(nice), date, price: unitPrice });
+    const it = s.pantry.items.find((p) => norm(p.name) === norm(nice));
+    if (it) {
+      it.qty = Math.round((it.qty + qty) * 100) / 100;
+      if (unitPrice) it.lastPrice = unitPrice;
+      it.updatedAt = new Date().toISOString();
+    } else savePantryItem(s, { name: nice, qty, unit, lastPrice: unitPrice });
+  }
+  if (s.pantry.prices.length > 600) s.pantry.prices = s.pantry.prices.slice(-600);
+}

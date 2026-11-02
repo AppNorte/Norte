@@ -219,6 +219,29 @@ try {
   await page.getByRole("dialog").getByText(/3 já existem/).waitFor();
   check("Finanças: não duplica ao importar de novo", true);
   await page.getByRole("button", { name: "Fechar" }).click();
+
+  // Nota fiscal: foto com QR Code da NFC-e
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("dialog").getByLabel("Escolher foto da nota").setInputFiles(path.resolve("scripts/fixtures/nfce-qr.png"));
+  await page.getByRole("dialog").getByText(/nota ficou guardada|Nota encontrada/).waitFor({ timeout: 30000 });
+  check("Nota fiscal: QR lido da foto preenche o valor", (await page.getByRole("dialog").getByLabel("Valor", { exact: true }).inputValue()) === "89,90");
+  check("Nota fiscal: link da Sefaz disponível", await page.getByRole("dialog").getByRole("link", { name: /Ver nota na Sefaz/ }).isVisible());
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  const nf = await page.evaluate(async () => {
+    const t = JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.find((x) => x.nfce);
+    if (!t) return null;
+    const blob = await new Promise((res) => {
+      const r = indexedDB.open("norte-files", 1);
+      r.onsuccess = () => {
+        const g = r.result.transaction("files").objectStore("files").get(t.attachmentId);
+        g.onsuccess = () => res(g.result);
+        g.onerror = () => res(null);
+      };
+      r.onerror = () => res(null);
+    });
+    return { amount: t.amount, date: t.date, chave: t.nfce.chave.length, photo: blob ? blob.size : 0 };
+  });
+  check("Nota fiscal: lançamento com chave, data e foto guardada", !!nf && nf.amount === 8990 && nf.date === "2026-09-05" && nf.chave === 44 && nf.photo > 0, JSON.stringify(nf));
   // Esconder valores
   await page.getByRole("button", { name: "Esconder valores" }).click();
   check("Finanças: esconder valores", await page.locator(".balance").getByText("R$ •••••").isVisible());
