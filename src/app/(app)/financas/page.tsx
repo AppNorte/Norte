@@ -6,6 +6,9 @@ import { Hero } from "@/components/Hero";
 import { Bar, Card, CardHead, Check, Cta, HeadLink, useToast } from "@/components/ui";
 import { AccountIcon, CatDot } from "@/components/finance/FinIcon";
 import { TxForm } from "@/components/finance/TxForm";
+import { MonthlyChart } from "@/components/finance/MonthlyChart";
+import { ImportSheet } from "@/components/finance/ImportSheet";
+import { FileUp } from "lucide-react";
 import { AccountsSheet, AllTxSheet, BudgetSheet, CardForm, InvoiceSheet, TxRow } from "@/components/finance/Sheets";
 import { SCREEN_VERSES } from "@/lib/content";
 import { toDateKey } from "@/lib/dates";
@@ -37,7 +40,7 @@ export default function Financas() {
   const today = toDateKey(now);
   const [month, setMonth] = useState(monthOf(today));
   const [tx, setTx] = useState<{ id?: string | null } | null>(null);
-  const [sheet, setSheet] = useState<null | "accounts" | "all" | "budget" | "newCard">(null);
+  const [sheet, setSheet] = useState<null | "accounts" | "all" | "budget" | "newCard" | "import">(null);
   const [inv, setInv] = useState<{ cardId: string; month: string } | null>(null);
   const [editCard, setEditCard] = useState<string | null>(null);
 
@@ -217,6 +220,11 @@ export default function Financas() {
         </Card>
 
         <Card>
+          <CardHead title="Evolução" sub="Receitas e despesas dos últimos 6 meses. Toque num mês." />
+          <MonthlyChart f={f} month={month} onSelect={setMonth} hide={hide} />
+        </Card>
+
+        <Card>
           <CardHead title="Para onde foi o dinheiro" sub={`Despesas de ${monthLabel(month).split(" ")[0].toLowerCase()} por categoria.`} action={<HeadLink onClick={() => setSheet("budget")}>Orçamento</HeadLink>} />
           {catRows.length === 0 && !uncategorized ? (
             <p className="empty">Sem despesas neste mês ainda.</p>
@@ -285,9 +293,13 @@ export default function Financas() {
         <Cta onClick={() => setTx({})} tagline="Quem cuida do pouco, prospera no muito.">
           Novo lançamento
         </Cta>
+        <button type="button" className="btn ghost block" style={{ marginTop: 6 }} onClick={() => setSheet("import")}>
+          <FileUp size={18} /> Importar extrato do banco (OFX/CSV)
+        </button>
       </div>
 
       <TxForm open={tx !== null} editId={tx?.id ?? null} onClose={() => setTx(null)} />
+      <ImportSheet open={sheet === "import"} onClose={() => setSheet(null)} />
       <AccountsSheet open={sheet === "accounts"} onClose={() => setSheet(null)} />
       <BudgetSheet open={sheet === "budget"} onClose={() => setSheet(null)} spend={spend} />
       <AllTxSheet

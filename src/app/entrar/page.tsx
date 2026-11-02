@@ -14,9 +14,9 @@ export default function Entrar() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!hydrated || !sync.user || !sync.lastReconcile) return;
+    if (!hydrated || !sync.user || !sync.lastReconcile || sync.recovery) return;
     router.replace(state ? "/hoje" : "/onboarding");
-  }, [hydrated, sync.user, sync.lastReconcile, state, router]);
+  }, [hydrated, sync.user, sync.lastReconcile, sync.recovery, state, router]);
 
   return (
     <main>

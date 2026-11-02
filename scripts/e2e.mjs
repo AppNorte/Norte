@@ -205,6 +205,20 @@ try {
   check("Finanças: fatura mostra a parcela", await page.getByRole("dialog").getByText(/Tênis/).first().isVisible());
   await page.getByRole("button", { name: "Fechar" }).click();
   check("Finanças: limite disponível", await page.getByText("Disponível R$ 1.400,00").isVisible());
+
+  // Importar extrato OFX
+  await page.getByRole("button", { name: /Importar extrato do banco/ }).click();
+  await page.getByRole("dialog").getByLabel("Arquivo do extrato").setInputFiles(path.resolve("scripts/fixtures/extrato-exemplo.ofx"));
+  await page.getByRole("dialog").getByText("SUPERMERCADO BOM PRECO").waitFor();
+  check("Finanças: extrato OFX lido com categoria automática", await page.getByRole("dialog").getByText(/Mercado/).first().isVisible());
+  await page.getByRole("dialog").getByRole("button", { name: /^Importar 3/ }).click();
+  const imp = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.filter((t) => t.notes.startsWith("[import:")).length);
+  check("Finanças: importa 3 lançamentos", imp === 3);
+  await page.getByRole("button", { name: /Importar extrato do banco/ }).click();
+  await page.getByRole("dialog").getByLabel("Arquivo do extrato").setInputFiles(path.resolve("scripts/fixtures/extrato-exemplo.ofx"));
+  await page.getByRole("dialog").getByText(/3 já existem/).waitFor();
+  check("Finanças: não duplica ao importar de novo", true);
+  await page.getByRole("button", { name: "Fechar" }).click();
   // Esconder valores
   await page.getByRole("button", { name: "Esconder valores" }).click();
   check("Finanças: esconder valores", await page.locator(".balance").getByText("R$ •••••").isVisible());
@@ -265,6 +279,13 @@ try {
   await page.getByRole("switch", { name: /Permitir que a IA/ }).click();
   await page.getByRole("button", { name: /Salvar perfil/ }).click();
   check("Perfil: salvo com consentimento", await page.evaluate(() => { const m = JSON.parse(localStorage.getItem("norte:v1")).me; return m.aiConsent && m.challenges.includes("Dinheiro"); }));
+
+
+  // Backup
+  await page.goto(`${BASE}/conta`);
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Baixar backup" }).click()]);
+  const backup = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
+  check("Backup: arquivo com todos os dados", backup.app === "NORTE" && Array.isArray(backup.state.finance.transactions) && backup.state.pantry.items.length > 0);
 
   // ---------- Meu dia ----------
   await page.getByRole("navigation").getByRole("link", { name: "Hoje" }).click();

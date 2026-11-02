@@ -37,7 +37,7 @@ export interface Profile {
   showVerses: boolean;
 }
 
-export type FocusArea = "rotina" | "leitura" | "espiritual" | "familia" | "organizacao";
+export type FocusArea = "rotina" | "leitura" | "espiritual" | "familia" | "organizacao" | "financas";
 
 export interface RoutineItem {
   id: string;

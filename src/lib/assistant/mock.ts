@@ -7,6 +7,7 @@ import { pickLocalMessage, themeFromText } from "@/lib/faith/messages";
 import { defaultMe } from "@/lib/defaults";
 import type { MeProfile } from "@/lib/types";
 import { parseMoney } from "@/lib/finance/logic";
+import { guessCategory } from "@/lib/finance/categorize";
 
 function norm(t: string) {
   return t
@@ -166,31 +167,8 @@ function bestMatch<T extends { title: string }>(text: string, list: T[]): T | un
 
 
 // ---------- Finanças / Casa / Perfil ----------
-const CAT_HINTS: [RegExp, string][] = [
-  [/mercado|supermercado|feira|atacad/, "mercado"],
-  [/lanche|restaurante|ifood|almoco|jantar|padaria|pizza|hamburguer|cafe/, "alimentacao"],
-  [/uber|99|gasolina|combustivel|onibus|metro|estacionamento|pedagio|carro/, "transporte"],
-  [/farmacia|remedio|medico|consulta|exame|dentista|plano de saude/, "saude"],
-  [/luz|energia|agua|internet|gas|telefone|celular/, "contas da casa"],
-  [/aluguel|condominio|iptu/, "moradia"],
-  [/igreja|oferta|dizimo|doacao/, "igreja e doacoes"],
-  [/escola|curso|faculdade|material/, "educacao"],
-  [/roupa|sapato|tenis|camisa/, "vestuario"],
-  [/netflix|spotify|assinatura|streaming|youtube/, "assinaturas"],
-  [/cinema|passeio|viagem|show|parque/, "lazer"],
-  [/salario|pagamento do mes/, "salario"],
-  [/freela|extra|bico|venda/, "renda extra"],
-];
-
 function guessCategoryId(text: string, kind: "expense" | "income", ctx: AssistantContext): string | null {
-  const cats = ctx.finance.categories.filter((c) => c.kind === kind);
-  for (const [re, name] of CAT_HINTS) {
-    if (re.test(text)) {
-      const c = cats.find((x) => norm(x.name) === name);
-      if (c) return c.id;
-    }
-  }
-  return null;
+  return guessCategory(text, kind, ctx.finance.categories);
 }
 
 function splitItems(raw: string): string[] {

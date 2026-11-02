@@ -36,6 +36,8 @@ export function AuthPanel() {
     );
   }
 
+  if (sync.recovery) return <NewPassword onDone={sync.endRecovery} />;
+
   if (sync.user) {
     const when = sync.lastSync ? new Date(sync.lastSync).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
     return (
@@ -120,6 +122,67 @@ export function AuthPanel() {
         )}
         <button type="submit" className="btn primary block" disabled={busy}>
           {busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}
+        </button>
+      </form>
+      {mode === "in" && (
+        <button
+          type="button"
+          className="btn ghost block"
+          style={{ marginTop: 6 }}
+          onClick={async () => {
+            const sb = getSupabase();
+            if (!sb) return;
+            if (!email.trim()) {
+              setMsg("Digite seu e-mail acima e toque de novo em “Esqueci minha senha”.");
+              return;
+            }
+            setBusy(true);
+            const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/entrar` });
+            setBusy(false);
+            setMsg(error ? translate(error.message) : "Enviamos um link para o seu e-mail. Abra-o neste aparelho para criar uma nova senha.");
+          }}
+        >
+          Esqueci minha senha
+        </button>
+      )}
+    </Card>
+  );
+}
+
+function NewPassword({ onDone }: { onDone: () => void }) {
+  const toast = useToast();
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <Card>
+      <CardHead title="Criar nova senha" icon={<Cloud size={28} />} />
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const sb = getSupabase();
+          if (!sb) return;
+          setBusy(true);
+          const { error } = await sb.auth.updateUser({ password: pw });
+          setBusy(false);
+          if (error) {
+            setMsg(translate(error.message));
+            return;
+          }
+          toast("Senha atualizada.");
+          onDone();
+        }}
+      >
+        <Field label="Nova senha (mínimo 6 caracteres)">
+          <input className="input" type="password" autoComplete="new-password" minLength={6} value={pw} onChange={(e) => setPw(e.target.value)} required />
+        </Field>
+        {msg && (
+          <p className="empty" role="alert" style={{ marginBottom: 12 }}>
+            {msg}
+          </p>
+        )}
+        <button type="submit" className="btn primary block" disabled={busy}>
+          Salvar nova senha
         </button>
       </form>
     </Card>

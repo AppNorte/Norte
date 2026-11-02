@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthPanel } from "@/components/AuthPanel";
+import { BackupCard } from "@/components/BackupCard";
 import { Hero } from "@/components/Hero";
 import { Card, CardHead } from "@/components/ui";
 
@@ -10,6 +11,7 @@ export default function Conta() {
       <Hero title="Conta e nuvem" sub="Seus dados seguros e com você." quote="Guarde o que importa." />
       <div className="sheet">
         <AuthPanel />
+        <BackupCard />
         <Card>
           <CardHead title="Como funciona" />
           <ul className="list">

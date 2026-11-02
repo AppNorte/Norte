@@ -3170,3 +3170,53 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 13px;
   color: var(--text-2);
 }
+
+/* =================== GRÁFICO =================== */
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.chart-max {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.chart-caption {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.chart-caption b {
+  color: var(--text);
+}
+
+/* 6 áreas: 3 por linha */
+.focus-grid > :nth-child(n) {
+  grid-column: span 2;
+  padding: 6px 7px;
+  gap: 5px;
+  font-size: 13px;
+}
+
+.splash-pillars span {
+  margin: 0 5px;
+}

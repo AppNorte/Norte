@@ -24,7 +24,7 @@ export default function Mais() {
     { href: "/assistente", title: "Assistente", sub: "Pergunte ao NORTE", icon: <Compass size={26} ring={false} /> },
     {
       href: "/conta",
-      title: "Conta e nuvem",
+      title: "Conta e backup",
       sub: !syncConfigured ? "Salvo neste aparelho" : sync.user ? `Sincronizado · ${sync.user.email}` : "Entre para salvar na nuvem",
       icon: <Cloud size={24} />,
     },

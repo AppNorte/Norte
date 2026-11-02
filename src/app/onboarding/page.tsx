@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ClipboardList, Clock, Moon, Sun, Target, User } from "lucide-react";
+import { Check, ClipboardList, Clock, Moon, Sun, Target, User, Wallet } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { Icon } from "@/components/Icon";
 import { Card, CardHead, Cta, Toggle } from "@/components/ui";
@@ -16,6 +16,7 @@ const FOCUS: { key: FocusArea; label: string; icon: React.ReactNode }[] = [
   { key: "leitura", label: "Leitura", icon: <Icon name="bible" size={24} /> },
   { key: "espiritual", label: "Vida espiritual", icon: <Icon name="pray" size={24} /> },
   { key: "familia", label: "Família", icon: <Icon name="users" size={24} /> },
+  { key: "financas", label: "Finanças", icon: <Wallet size={24} strokeWidth={1.7} aria-hidden="true" /> },
   { key: "organizacao", label: "Organização do dia", icon: <ClipboardList size={24} strokeWidth={1.7} aria-hidden="true" /> },
 ];
 

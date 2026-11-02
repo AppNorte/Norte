@@ -19,6 +19,9 @@ interface SyncValue {
   lastReconcile: "remote" | "local" | "empty" | null;
   syncNow: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Chegou pelo link de "esqueci minha senha": mostrar o campo de nova senha. */
+  recovery: boolean;
+  endRecovery: () => void;
 }
 
 const Ctx = createContext<SyncValue>({
@@ -29,6 +32,8 @@ const Ctx = createContext<SyncValue>({
   lastReconcile: null,
   syncNow: async () => {},
   signOut: async () => {},
+  recovery: false,
+  endRecovery: () => {},
 });
 
 const MARK = "norte:sync-user"; // usuário já conciliado neste aparelho
@@ -54,6 +59,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastReconcile, setLastReconcile] = useState<SyncValue["lastReconcile"]>(null);
+  const [recovery, setRecovery] = useState(false);
   const synced = useRef<number | null>(null); // updatedAt da última versão igual à nuvem
   const stateRef = useRef(state);
   const reconciled = useRef<string | null>(null);
@@ -70,7 +76,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       const u = data.session?.user;
       setUser(u ? { id: u.id, email: u.email ?? "" } : null);
     });
-    const { data } = sb.auth.onAuthStateChange((_e, session) => {
+    const { data } = sb.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
       const u = session?.user;
       setUser(u ? { id: u.id, email: u.email ?? "" } : null);
     });
@@ -189,9 +196,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     setLastReconcile(null);
   }, [user, push]);
 
+  const endRecovery = useCallback(() => setRecovery(false), []);
   const value = useMemo(
-    () => ({ user, status, lastSync, error, lastReconcile, syncNow, signOut }),
-    [user, status, lastSync, error, lastReconcile, syncNow, signOut],
+    () => ({ user, status, lastSync, error, lastReconcile, syncNow, signOut, recovery, endRecovery }),
+    [user, status, lastSync, error, lastReconcile, syncNow, signOut, recovery, endRecovery],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
