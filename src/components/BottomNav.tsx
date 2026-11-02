@@ -9,7 +9,7 @@ const TABS = [
   { href: "/financas", label: "Finanças", Icon: Wallet, match: ["/financas"] },
   { href: "/casa", label: "Casa", Icon: ShoppingBasket, match: ["/casa"] },
   { href: "/rotina", label: "Rotina", Icon: CalendarDays, match: ["/rotina"] },
-  { href: "/mais", label: "Mais", Icon: LayoutGrid, match: ["/mais", "/leitura", "/familia", "/assistente", "/conta"] },
+  { href: "/mais", label: "Mais", Icon: LayoutGrid, match: ["/mais", "/leitura", "/familia", "/assistente", "/conta", "/fe", "/metas", "/perfil"] },
 ];
 
 export function BottomNav() {

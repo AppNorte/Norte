@@ -10,9 +10,12 @@ export const ACTION_TYPES: ActionType[] = [
   "update_priority",
   "create_agenda_item",
   "update_routine_times",
+  "create_transaction",
+  "add_shopping_item",
+  "remember_about_me",
 ];
 
-export type SuggestionKind = "bible" | "book" | "prayer" | "priorities" | "family" | "routine" | "food" | "other";
+export type SuggestionKind = "bible" | "book" | "prayer" | "priorities" | "family" | "routine" | "food" | "finance" | "home" | "faith" | "habit" | "other";
 
 export interface ReplySuggestion {
   kind: SuggestionKind;
@@ -49,6 +52,10 @@ export const KIND_META: Record<SuggestionKind, { icon: IconKey | "food"; href?: 
   family: { icon: "users", href: "/familia" },
   routine: { icon: "check", href: "/rotina" },
   food: { icon: "food" },
+  finance: { icon: "target", href: "/financas" },
+  home: { icon: "list", href: "/casa" },
+  faith: { icon: "heart", href: "/fe" },
+  habit: { icon: "check", href: "/metas" },
   other: { icon: "check" },
 };
 

@@ -20,6 +20,9 @@ import {
 } from "@/lib/dates";
 import { uid } from "@/lib/id";
 import { guessIcon } from "@/lib/seed";
+import { addTransaction, monthOf, monthSummary, totalBalance, upcomingBills, money } from "@/lib/finance/logic";
+import { addShopItem, itemStatus } from "@/lib/pantry";
+import { habitsFor } from "@/lib/growth";
 
 // ======================= SELETORES =======================
 
@@ -236,6 +239,35 @@ export function buildAssistantContext(s: AppState, now = new Date()) {
       week: familyWeek(s, today).map((r) => ({ label: r.label, count: r.count, goal: s.weeklyFamilyGoal })),
     },
     agenda: agendaFor(s, today).map((a) => ({ id: a.id, title: a.title, time: a.time, status: a.status })),
+    finance: (() => {
+      const f = s.finance;
+      const sum = monthSummary(f, monthOf(today), today);
+      return {
+        hidden: f.hideValues,
+        balance: money(sum.balance),
+        month: { income: money(sum.income), expense: money(sum.expense), forecastEndOfMonth: money(sum.forecast) },
+        bills: upcomingBills(f, today, 7).map((b) => ({ label: b.label, date: b.date, amount: money(b.amount), overdue: b.overdue, income: b.income })),
+        categories: f.categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind })),
+        accounts: f.accounts.filter((a) => !a.archived).map((a) => ({ id: a.id, name: a.name })),
+        cards: f.cards.filter((c) => !c.archived).map((c) => ({ id: c.id, name: c.name })),
+        totalBalanceCents: totalBalance(f),
+      };
+    })(),
+    pantry: {
+      lowOrOut: s.pantry.items.filter((it) => ["low", "out"].includes(itemStatus(it, today).status)).map((it) => it.name).slice(0, 15),
+      expiringSoon: s.pantry.items.filter((it) => ["expiring", "expired"].includes(itemStatus(it, today).status)).map((it) => `${it.name} (${it.expiry})`).slice(0, 10),
+      inStock: s.pantry.items.filter((it) => it.qty > 0).map((it) => it.name).slice(0, 40),
+      shoppingList: s.pantry.shopping.filter((x) => !x.checked).map((x) => x.name).slice(0, 30),
+    },
+    growth: {
+      habitsToday: habitsFor(s, today).map((h) => ({ title: h.title, done: h.log.includes(today) })),
+      goals: s.growth.goals.filter((g) => g.status === "active").map((g) => ({ title: g.title, why: g.why, nextStep: g.steps.find((x) => !x.done)?.title ?? null })),
+      moodToday: s.growth.moods.find((m) => m.date === today) ?? null,
+    },
+    // Perfil só vai para a IA com consentimento explícito do usuário.
+    me: s.me.aiConsent
+      ? { about: s.me.about, values: s.me.values, dreams: s.me.dreams, challenges: s.me.challenges, motivations: s.me.motivations, faith: s.me.faith, tone: s.me.tone, notes: s.me.notes.map((n) => n.text) }
+      : null,
   };
 }
 
@@ -572,6 +604,39 @@ export function executeAction(s: AppState, action: ProposedAction): { ok: boolea
       sortRoutineByTime(s, "morning");
       sortRoutineByTime(s, "evening");
       return { ok: true, message: "Rotina atualizada." };
+    }
+    case "create_transaction": {
+      const amount = typeof p.amount_cents === "number" ? Math.round(p.amount_cents) : 0;
+      const kind = p.kind === "income" ? "income" : "expense";
+      if (amount <= 0) return { ok: false, message: "Valor inválido." };
+      const f = s.finance;
+      const cardId = str(p.card_id) && f.cards.some((c) => c.id === p.card_id) ? str(p.card_id) : null;
+      const accountId = cardId ? null : str(p.account_id) && f.accounts.some((a) => a.id === p.account_id) ? str(p.account_id) : (f.accounts.find((a) => !a.archived)?.id ?? null);
+      const cat = f.categories.find((c) => c.id === p.category_id && c.kind === kind) ?? null;
+      addTransaction(s, {
+        kind,
+        amount,
+        date: str(p.date) || today,
+        description: str(p.description) || (kind === "income" ? "Receita" : "Despesa"),
+        categoryId: cat?.id ?? null,
+        accountId,
+        cardId,
+        paid: p.paid !== false,
+      });
+      return { ok: true, message: `${kind === "income" ? "Receita" : "Despesa"} de ${money(amount)} lançada nas Finanças.` };
+    }
+    case "add_shopping_item": {
+      const names = Array.isArray(p.names) ? (p.names as unknown[]).map(String) : [str(p.name)];
+      const valid = names.map((n) => n.trim()).filter(Boolean).slice(0, 30);
+      if (!valid.length) return { ok: false, message: "Nenhum item informado." };
+      valid.forEach((n) => addShopItem(s, { name: n }));
+      return { ok: true, message: `${valid.length} item(ns) na lista de compras.` };
+    }
+    case "remember_about_me": {
+      const text = str(p.text).trim().slice(0, 300);
+      if (!text) return { ok: false, message: "Nada para lembrar." };
+      s.me.notes.push({ id: uid(), text, createdAt: new Date().toISOString() });
+      return { ok: true, message: "Anotado em Meu perfil. Você pode apagar quando quiser." };
     }
     default:
       return { ok: false, message: "Ação não autorizada." };

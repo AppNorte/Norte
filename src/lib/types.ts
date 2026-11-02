@@ -156,7 +156,10 @@ export type ActionType =
   | "create_priority"
   | "update_priority"
   | "create_agenda_item"
-  | "update_routine_times";
+  | "update_routine_times"
+  | "create_transaction"
+  | "add_shopping_item"
+  | "remember_about_me";
 
 export interface ProposedAction {
   id: string;
@@ -254,6 +257,135 @@ export interface FinanceState {
   hideValues: boolean;
 }
 
+// ---------- Casa / Despensa ----------
+
+export type PantryLocation = "despensa" | "geladeira" | "freezer" | "limpeza" | "outro";
+
+export interface PantryItem {
+  id: string;
+  name: string;
+  category: string;
+  location: PantryLocation;
+  qty: number;
+  unit: string; // un, kg, g, L, ml, pct, cx, dz
+  minQty: number; // abaixo ou igual a isso => "acabando"
+  expiry: string | null; // YYYY-MM-DD
+  lastPrice: number | null; // centavos por unidade
+  updatedAt: string;
+}
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  qty: number;
+  unit: string;
+  category: string;
+  checked: boolean;
+  price: number | null; // centavos (preço total da linha)
+  pantryId: string | null;
+}
+
+export interface PriceEntry {
+  name: string; // nome normalizado do item
+  date: string;
+  price: number; // centavos por unidade
+}
+
+export interface PantryState {
+  items: PantryItem[];
+  shopping: ShopItem[];
+  prices: PriceEntry[];
+}
+
+// ---------- Fé e força ----------
+
+export interface DailyMessage {
+  date: string;
+  text: string;
+  verse: { text: string; ref: string } | null;
+  source: "ai" | "local";
+}
+
+export interface GratitudeEntry {
+  id: string;
+  date: string;
+  items: string[];
+}
+
+export interface Prayer {
+  id: string;
+  text: string;
+  createdAt: string;
+  answeredAt: string | null;
+  answerNote: string;
+}
+
+export interface FaithState {
+  daily: DailyMessage[]; // cache das mensagens (últimos dias)
+  favorites: DailyMessage[];
+  gratitude: GratitudeEntry[];
+  prayers: Prayer[];
+}
+
+// ---------- Meu perfil (para a IA) ----------
+
+export interface MeProfile {
+  about: string;
+  values: string[];
+  dreams: string;
+  challenges: string[];
+  motivations: string;
+  faith: "crista" | "espiritual" | "nenhuma" | "";
+  tone: "acolhedor" | "direto" | "motivador";
+  aiConsent: boolean; // permite a IA usar o perfil
+  notes: { id: string; text: string; createdAt: string }[]; // fatos confirmados pelo usuário
+}
+
+// ---------- Metas, hábitos, humor ----------
+
+export interface Goal {
+  id: string;
+  title: string;
+  why: string;
+  area: string;
+  deadline: string | null;
+  steps: { id: string; title: string; done: boolean }[];
+  status: "active" | "done" | "paused";
+  createdAt: string;
+}
+
+export interface Habit {
+  id: string;
+  title: string;
+  icon: string;
+  weekdays: number[]; // 0=dom … 6=sáb
+  active: boolean;
+  log: string[]; // datas concluídas
+  createdAt: string;
+}
+
+export interface MoodEntry {
+  date: string;
+  mood: number; // 1–5
+  energy: number; // 1–5
+  note: string;
+}
+
+export interface WeeklyReview {
+  weekStart: string;
+  wins: string;
+  lessons: string;
+  nextFocus: string;
+  createdAt: string;
+}
+
+export interface GrowthState {
+  goals: Goal[];
+  habits: Habit[];
+  moods: MoodEntry[];
+  reviews: WeeklyReview[];
+}
+
 export interface AppState {
   version: 2;
   updatedAt: number; // epoch ms da última alteração (sincronização)
@@ -273,4 +405,8 @@ export interface AppState {
   agenda: AgendaItem[];
   messages: ChatMessage[];
   finance: FinanceState;
+  pantry: PantryState;
+  faith: FaithState;
+  me: MeProfile;
+  growth: GrowthState;
 }

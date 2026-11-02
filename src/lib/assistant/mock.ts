@@ -3,6 +3,10 @@
 import type { AssistantContext } from "@/store/logic";
 import type { AssistantReply, ReplyAction, ReplySuggestion } from "./types";
 import { addDays } from "@/lib/dates";
+import { pickLocalMessage, themeFromText } from "@/lib/faith/messages";
+import { defaultMe } from "@/lib/defaults";
+import type { MeProfile } from "@/lib/types";
+import { parseMoney } from "@/lib/finance/logic";
 
 function norm(t: string) {
   return t
@@ -160,6 +164,43 @@ function bestMatch<T extends { title: string }>(text: string, list: T[]): T | un
   return best;
 }
 
+
+// ---------- Finanças / Casa / Perfil ----------
+const CAT_HINTS: [RegExp, string][] = [
+  [/mercado|supermercado|feira|atacad/, "mercado"],
+  [/lanche|restaurante|ifood|almoco|jantar|padaria|pizza|hamburguer|cafe/, "alimentacao"],
+  [/uber|99|gasolina|combustivel|onibus|metro|estacionamento|pedagio|carro/, "transporte"],
+  [/farmacia|remedio|medico|consulta|exame|dentista|plano de saude/, "saude"],
+  [/luz|energia|agua|internet|gas|telefone|celular/, "contas da casa"],
+  [/aluguel|condominio|iptu/, "moradia"],
+  [/igreja|oferta|dizimo|doacao/, "igreja e doacoes"],
+  [/escola|curso|faculdade|material/, "educacao"],
+  [/roupa|sapato|tenis|camisa/, "vestuario"],
+  [/netflix|spotify|assinatura|streaming|youtube/, "assinaturas"],
+  [/cinema|passeio|viagem|show|parque/, "lazer"],
+  [/salario|pagamento do mes/, "salario"],
+  [/freela|extra|bico|venda/, "renda extra"],
+];
+
+function guessCategoryId(text: string, kind: "expense" | "income", ctx: AssistantContext): string | null {
+  const cats = ctx.finance.categories.filter((c) => c.kind === kind);
+  for (const [re, name] of CAT_HINTS) {
+    if (re.test(text)) {
+      const c = cats.find((x) => norm(x.name) === name);
+      if (c) return c.id;
+    }
+  }
+  return null;
+}
+
+function splitItems(raw: string): string[] {
+  return raw
+    .split(/,|;| e /)
+    .map((x) => x.replace(/^(o|a|os|as|um|uma|uns|umas|mais)\s+/i, "").trim())
+    .filter((x) => x.length > 1)
+    .map((x) => x.charAt(0).toUpperCase() + x.slice(1));
+}
+
 // ======================= RESPOSTA =======================
 export function mockReply(message: string, ctx: AssistantContext): AssistantReply {
   const t = norm(message);
@@ -171,6 +212,86 @@ export function mockReply(message: string, ctx: AssistantContext): AssistantRepl
   });
 
   if (!t) return reply("Estou aqui. Como posso ajudar?");
+
+  // A. Guardar algo sobre o usuário (sempre com confirmação)
+  const rem = /^(?:lembr[ae](?:-se)?(?: de)? que|anot[ae] que|guarde que|saiba que)\s+(.{4,})$/i.exec(message.trim());
+  if (rem) {
+    const text = rem[1].replace(/[.!]+$/, "").trim();
+    const fact = text.charAt(0).toUpperCase() + text.slice(1);
+    return reply(`Posso guardar isso em Meu perfil para te ajudar melhor:\n“${fact}”. Quer salvar?`, undefined, [{ type: "remember_about_me", summary: `Guardar: ${fact}`, payload: { text: fact } }]);
+  }
+
+  // B. Lista de compras
+  const shop =
+    /(?:adicion\w*|coloc\w*|poe|põe|bota|inclu\w*|anota)\s+(.+?)\s+(?:na|a|à)\s+lista/i.exec(message) ||
+    /^(?:comprar|preciso comprar|tem que comprar)\s+(.+)$/i.exec(message.trim()) ||
+    /acab(?:ou|aram)\s+(?:o|a|os|as)?\s*(.+)$/i.exec(message.trim());
+  if (shop) {
+    const items = splitItems(shop[1].replace(/[.!]+$/, ""));
+    if (items.length)
+      return reply(`Coloco na lista de compras: ${items.join(", ")}?`, undefined, [{ type: "add_shopping_item", summary: `Adicionar à lista: ${items.join(", ")}`, payload: { names: items } }]);
+  }
+
+  // C. Lançamento financeiro
+  const out = /\b(gastei|paguei|comprei)\b[^\d]*(\d[\d.,]*)/.exec(t);
+  const inc = /\b(recebi|ganhei|entrou|caiu)\b[^\d]*(\d[\d.,]*)/.exec(t);
+  const fin = out ?? inc;
+  if (fin && ctx.finance) {
+    const cents = parseMoney(fin[2]);
+    if (cents) {
+      const kind = out ? "expense" : "income";
+      const what = /(?:no|na|em|com|de|do|da)\s+([a-z0-9 ]{3,30})$/.exec(t.replace(/[.!]+$/, ""));
+      const card = ctx.finance.cards.find((c) => t.includes(norm(c.name)) && /cartao|credito/.test(t));
+      const description = cap(what ? what[1].replace(/\b(cartao|credito|hoje|ontem)\b/g, "").trim() : kind === "income" ? "Receita" : "Despesa") || (kind === "income" ? "Receita" : "Despesa");
+      const categoryId = guessCategoryId(t, kind, ctx);
+      const date = /\bontem\b/.test(t) ? addDays(ctx.today, -1) : ctx.today;
+      const brl = (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const catName = ctx.finance.categories.find((c) => c.id === categoryId)?.name;
+      return reply(
+        `Lanço ${kind === "income" ? "uma receita" : "uma despesa"} de ${brl}${catName ? ` em ${catName}` : ""}${card ? ` no cartão ${card.name}` : ""}?`,
+        undefined,
+        [
+          {
+            type: "create_transaction",
+            summary: `${kind === "income" ? "Receita" : "Despesa"}: ${description} · ${brl}${date !== ctx.today ? " (ontem)" : ""}`,
+            payload: { kind, amount_cents: cents, description, category_id: categoryId, card_id: card?.id ?? null, account_id: card ? null : (ctx.finance.accounts[0]?.id ?? null), date },
+          },
+        ],
+      );
+    }
+  }
+
+  // D. Situação financeira
+  if (ctx.finance && /\b(saldo|minhas financas|meu dinheiro|quanto (gastei|tenho)|contas a pagar|vencendo|fatura)\b/.test(t)) {
+    const f = ctx.finance;
+    if (f.hidden) return reply("Seus valores estão ocultos em Finanças. Toque no olho por lá para ver os números.", [{ kind: "finance", label: "Abrir Finanças" }]);
+    const bills = f.bills.filter((b) => !b.income);
+    return reply(
+      `Saldo em contas: ${f.balance}.\nEste mês: entrou ${f.month.income}, saiu ${f.month.expense}.\nPrevisto no fim do mês: ${f.month.forecastEndOfMonth}.` +
+        (bills.length ? `\nPróximas contas: ${bills.slice(0, 3).map((b) => `${b.label} (${b.amount}${b.overdue ? ", atrasada" : ""})`).join(", ")}.` : "\nNada vencendo nos próximos 7 dias."),
+      [{ kind: "finance", label: "Abrir Finanças" }],
+    );
+  }
+
+  // E. Casa
+  if (ctx.pantry && /(o que (tem|tenho) (em casa|na despensa|na geladeira)|esta acabando|ta acabando|vencendo em casa|minha lista)/.test(t)) {
+    const p = ctx.pantry;
+    const parts = [];
+    if (p.lowOrOut.length) parts.push(`Acabando: ${p.lowOrOut.slice(0, 8).join(", ")}.`);
+    if (p.expiringSoon.length) parts.push(`Vencendo: ${p.expiringSoon.slice(0, 5).join(", ")}.`);
+    if (p.shoppingList.length) parts.push(`Na lista: ${p.shoppingList.slice(0, 8).join(", ")}.`);
+    return reply(parts.length ? parts.join("\n") : "Está tudo em ordem na despensa.", [{ kind: "home", label: "Abrir Casa" }]);
+  }
+
+  // F. Ânimo e fé
+  if (/triste|ansios|cansad|desanim|preocupad|sozinh|me anima|uma palavra|preciso de forca|mensagem de fe|orar por/.test(t)) {
+    const me: MeProfile = { ...defaultMe(), ...(ctx.me ?? {}), notes: [] };
+    const m = pickLocalMessage(me, ctx.today, Math.floor(Math.random() * 7), themeFromText(t));
+    return reply(`${m.text}${m.verse ? `\n\n“${m.verse.text}” (${m.verse.ref})` : ""}\n\nSe o peso estiver grande demais, fale com alguém de confiança. Você não precisa carregar sozinho.`, [
+      { kind: "faith", label: "Abrir Fé e força" },
+      { kind: "habit", label: "Registrar como estou hoje" },
+    ]);
+  }
 
   // 1. Reorganização: "não consegui fazer X"
   if (/\bnao (consegui|deu|fiz|vou conseguir)|\bfalhei\b|\besqueci\b/.test(t)) {
@@ -220,7 +341,9 @@ export function mockReply(message: string, ctx: AssistantContext): AssistantRepl
   }
 
   // 3. Alimentação simples
-  const ings = ingredients(t);
+  let ings = ingredients(t);
+  if (ings.length < 2 && /(o que (fazer|faco|cozinhar|comer)|ideia de (almoco|jantar|cafe|lanche)|pra (o )?(almoco|jantar|janta))/.test(t) && ctx.pantry?.inStock.length)
+    ings = ingredients(norm(ctx.pantry.inStock.join(" ")));
   if (ings.length >= 2 || (ings.length >= 1 && /tenho|cafe da manha|almoco|jantar|lanche|comer|receita|refeicao/.test(t) && !/tenho \d/.test(t))) {
     const ideas = mealIdeas(ings);
     const meal = /almoco/.test(t) ? "almoço" : /jantar|janta/.test(t) ? "jantar" : /lanche/.test(t) ? "lanche" : Number(ctx.time.slice(0, 2)) < 11 ? "café da manhã" : "refeição";

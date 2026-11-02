@@ -19,6 +19,24 @@ A sincronização guarda o estado inteiro do usuário em `app_state` (JSONB, com
 
 Contas com saldo, receitas, despesas e transferências (pagas ou pendentes), cartões de crédito (limite, fechamento, vencimento, fatura por mês e pagamento), compras parceladas, lançamentos fixos mensais, categorias com orçamento, previsão do fim do mês e contas a pagar e receber. Valores sempre em centavos (`src/lib/finance/logic.ts`).
 
+## Casa / Despensa
+
+Estoque por local (despensa, geladeira, freezer…), categoria automática pelo nome, aviso do que está acabando e vencendo, lista de compras com preço, e "Concluir compra", que soma na despensa, guarda o histórico de preços e (opcional) lança o gasto em Finanças.
+
+## Fé e força, Perfil e IA
+
+- Mensagem do dia: com `AI_PROVIDER=anthropic` e consentimento em **Meu perfil**, é escrita pela IA para o usuário (`/api/daily`); sem isso, vem da coleção local (`src/lib/faith/messages.ts`), escolhida pelos desafios do perfil.
+- Gratidão diária (com sequência), pedidos de oração/intenções, favoritas.
+- Meu perfil: sobre mim, sonhos, valores, desafios, fé (ou sem religião) e tom. O perfil só vai para a IA com consentimento. "O que o NORTE sabe sobre você" lista o que foi confirmado e pode ser apagado.
+
+## Metas e hábitos
+
+Humor e energia do dia, hábitos por dia da semana com sequência, metas com passos, resumo e revisão da semana e conquistas.
+
+## Assistente
+
+Também entende finanças ("gastei 50 no mercado"), lista de compras ("coloca leite e pão na lista"), perfil ("lembre que…") e ânimo ("estou ansioso"). Toda alteração continua pedindo **Confirmar**.
+
 Especificação em `docs/` e referências visuais em `mockups/`.
 
 ## Rodar

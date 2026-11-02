@@ -11,7 +11,13 @@ import { DAILY_VERSES, pickByDay, SHORT_QUOTES } from "@/lib/content";
 import { clockTime, dayPart, greeting, longDate, toDateKey } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
 import { useAppState } from "@/store/StoreProvider";
+import type { IconKey } from "@/lib/types";
 import { money, totalBalance, upcomingBills } from "@/lib/finance/logic";
+import { useDailyMessage } from "@/lib/faith/useDaily";
+import { habitStreak, habitsFor, toggleHabit } from "@/lib/growth";
+import { pantrySummary } from "@/lib/pantry";
+import { MoodCheck } from "@/components/MoodCheck";
+import { Flame, Sparkles } from "lucide-react";
 import {
   bibleStatus,
   bookStatus,
@@ -31,6 +37,10 @@ export default function Hoje() {
   const now = useNow();
   const today = toDateKey(now);
   const [editPrio, setEditPrio] = useState(false);
+  const daily = useDailyMessage();
+  const habits = habitsFor(s, today);
+  const casa = pantrySummary(s, today);
+  const moodToday = s.growth.moods.some((m) => m.date === today);
 
   const night = dayPart(now) === "night";
   const period = night ? "evening" : "morning";
@@ -60,6 +70,21 @@ export default function Hoje() {
         verse={pickByDay(DAILY_VERSES, now)}
       />
       <div className="sheet">
+        <Link href="/fe" className="card daily-mini">
+          <span className="daily-kicker">
+            <Sparkles size={15} /> Mensagem do dia
+          </span>
+          <span className="daily-mini-text">{daily.text}</span>
+          {daily.verse && <span className="daily-mini-ref">{daily.verse.ref}</span>}
+        </Link>
+
+        {!moodToday && (
+          <Card>
+            <CardHead title="Como você está hoje?" />
+            <MoodCheck compact />
+          </Card>
+        )}
+
         <Card>
           <CardHead
             title={night ? "Sua noite" : "Sua manhã"}
@@ -130,6 +155,33 @@ export default function Hoje() {
             </ul>
           )}
         </Card>
+
+        {habits.length > 0 && (
+          <Card>
+            <CardHead title="Hábitos de hoje" sub={`${habits.filter((h) => h.log.includes(today)).length} de ${habits.length} feitos`} action={<HeadLink href="/metas">Ver todos</HeadLink>} />
+            <ul className="list">
+              {habits.map((h) => {
+                const streak = habitStreak(h, today);
+                return (
+                  <li className="row" key={h.id}>
+                    <span className="row-icon">
+                      <Icon name={h.icon as IconKey} size={24} />
+                    </span>
+                    <span className={`row-main ${h.log.includes(today) ? "done-text" : ""}`}>
+                      {h.title}
+                      {streak > 1 && (
+                        <small style={{ color: "#c8701c" }}>
+                          <Flame size={12} /> {streak} dias seguidos
+                        </small>
+                      )}
+                    </span>
+                    <Check checked={h.log.includes(today)} label={h.title} onChange={() => mutate((d) => toggleHabit(d, h.id, today))} />
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        )}
 
         <Card>
           <CardHead title="Leitura de hoje" sub="Alimente sua mente com a Palavra." action={<HeadLink href="/leitura">Ver leitura</HeadLink>} />
@@ -203,6 +255,12 @@ export default function Hoje() {
             </div>
           )}
         </Card>
+
+        {(casa.low > 0 || casa.expiring > 0) && (
+          <Link href="/casa" className="banner">
+            Casa: {[casa.low ? `${casa.low} acabando` : "", casa.expiring ? `${casa.expiring} vencendo` : ""].filter(Boolean).join(" · ")} — ver lista
+          </Link>
+        )}
 
         <Card>
           <CardHead title="Família hoje" sub="Pequenos momentos, grandes laços." action={<HeadLink href="/familia">Ver mais</HeadLink>} />

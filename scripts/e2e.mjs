@@ -212,6 +212,60 @@ try {
   check("Sem rolagem horizontal (390px) em Finanças", await noHorizontalScroll(page));
   await shot(page, "09-financas");
 
+
+  // ---------- Casa ----------
+  await page.getByRole("navigation").getByRole("link", { name: "Casa" }).click();
+  await page.getByRole("button", { name: "Adicionar item" }).first().click();
+  await page.getByRole("dialog").getByLabel("Nome").fill("Arroz");
+  await page.getByRole("dialog").getByLabel("Quantidade").fill("1");
+  await page.getByRole("dialog").getByLabel("Avisar quando tiver até").fill("1");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar item" }).click();
+  check("Casa: item na despensa com categoria automática", await page.getByText("Mercearia").isVisible());
+  await page.getByRole("button", { name: /acabando\. Adicionar à lista/ }).click();
+  check("Casa: item acabando vai para a lista", await page.getByRole("checkbox", { name: "Arroz" }).isVisible());
+  await page.getByLabel("Adicionar à lista", { exact: true }).first().fill("leite, café");
+  await page.getByRole("button", { name: "Adicionar à lista" }).last().click();
+  await page.getByRole("checkbox", { name: "Arroz" }).click();
+  await page.getByLabel("Preço de Arroz").fill("25,90");
+  await page.getByLabel("Preço de Arroz").blur();
+  await page.getByRole("button", { name: /Concluir compra/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Concluir" }).click();
+  const casa = await page.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem("norte:v1"));
+    return { qty: st.pantry.items.find((i) => i.name === "Arroz").qty, left: st.pantry.shopping.length, tx: st.finance.transactions.some((t) => t.amount === 2590 && t.description.startsWith("Compras")) };
+  });
+  check("Casa: concluir compra soma na despensa", casa.qty === 2);
+  check("Casa: itens não comprados ficam na lista", casa.left === 2);
+  check("Casa: compra lançada nas Finanças", casa.tx);
+  check("Sem rolagem horizontal (390px) em Casa", await noHorizontalScroll(page));
+  await shot(page, "11-casa");
+
+  // ---------- Metas, Fé e Perfil ----------
+  await page.goto(`${BASE}/metas`);
+  await page.getByRole("radio", { name: "Bem", exact: true }).click();
+  await page.getByRole("button", { name: "Novo" }).click();
+  await page.getByRole("dialog").getByLabel("Hábito").fill("Beber 2L de água");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar hábito" }).click();
+  await page.getByRole("checkbox", { name: "Beber 2L de água" }).click();
+  check("Metas: hábito marcado hoje", (await page.getByRole("checkbox", { name: "Beber 2L de água" }).getAttribute("aria-checked")) === "true");
+  await page.getByRole("button", { name: "Nova", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Meta").fill("Quitar o cartão");
+  await page.getByRole("dialog").getByLabel(/Passos/).fill("Listar dívidas\nNegociar juros");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar meta" }).click();
+  check("Metas: meta com passos", await page.getByText("0 de 2 passos").isVisible());
+  await shot(page, "12-metas");
+  await page.goto(`${BASE}/fe`);
+  check("Fé: mensagem do dia aparece", await page.locator(".daily-text").isVisible());
+  await page.getByLabel("Gratidão 1").fill("Minha família");
+  await page.getByRole("button", { name: "Salvar gratidão" }).click();
+  check("Fé: gratidão registrada", await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).faith.gratitude.length === 1));
+  await shot(page, "13-fe");
+  await page.goto(`${BASE}/perfil`);
+  await page.getByRole("button", { name: "Dinheiro" }).click();
+  await page.getByRole("switch", { name: /Permitir que a IA/ }).click();
+  await page.getByRole("button", { name: /Salvar perfil/ }).click();
+  check("Perfil: salvo com consentimento", await page.evaluate(() => { const m = JSON.parse(localStorage.getItem("norte:v1")).me; return m.aiConsent && m.challenges.includes("Dinheiro"); }));
+
   // ---------- Meu dia ----------
   await page.getByRole("navigation").getByRole("link", { name: "Hoje" }).click();
   await page.getByRole("link", { name: /ver meu dia/ }).click();
@@ -246,6 +300,20 @@ try {
     JSON.parse(localStorage.getItem("norte:v1")).priorities.find((p) => p.title.startsWith("Finalizar")).date,
   );
   check("Assistente: reorganização após confirmação", moved === "2026-09-12");
+
+  // Assistente: finanças, lista e perfil
+  await page.getByLabel("Mensagem para o NORTE").fill("gastei 50 no mercado");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await page.locator(".proposal", { hasText: "Despesa" }).getByRole("button", { name: "Confirmar" }).click();
+  check("Assistente: lança despesa após confirmar", await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.some((t) => t.amount === 5000)));
+  await page.getByLabel("Mensagem para o NORTE").fill("coloca ovos e banana na lista");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await page.locator(".proposal", { hasText: "lista" }).getByRole("button", { name: "Confirmar" }).click();
+  check("Assistente: adiciona à lista de compras", await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).pantry.shopping.some((x) => x.name === "Banana")));
+  await page.getByLabel("Mensagem para o NORTE").fill("lembre que eu trabalho até as 18h");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await page.locator(".proposal", { hasText: "Guardar" }).getByRole("button", { name: "Confirmar" }).click();
+  check("Assistente: guarda fato no perfil", await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).me.notes.length === 1));
   check("Sem rolagem horizontal (390px) no Assistente", await noHorizontalScroll(page));
 
   // Falha da IA não impede o uso: derruba a rota e confere o modo local
@@ -259,7 +327,7 @@ try {
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/financas", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta"]) {
+  for (const url of ["/hoje", "/financas", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

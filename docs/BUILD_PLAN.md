@@ -51,9 +51,11 @@
 # V2 — Plano
 
 - [x] V1 (Fases 1, 2, 4 parcial e 5 parcial) publicada.
-- [ ] Etapa 1 — Base: menu Hoje/Finanças/Casa/Rotina/Mais, Assistente flutuante, login e sincronização com Supabase (`app_state` em JSONB por usuário, último a salvar vence).
-- [ ] Etapa 2 — Finanças completas.
-- [ ] Etapa 3 — Casa / Despensa.
-- [ ] Etapa 4 — Fé e força.
-- [ ] Etapa 5 — Perfil + IA personalizada.
-- [ ] Etapa 6 — Metas, hábitos, humor, revisão semanal.
+- [x] Etapa 1 — Base: menu Hoje/Finanças/Casa/Rotina/Mais, Assistente flutuante, login e sincronização com Supabase (`app_state` em JSONB por usuário, último a salvar vence).
+- [x] Etapa 2 — Finanças completas.
+- [x] Etapa 3 — Casa / Despensa.
+- [x] Etapa 4 — Fé e força.
+- [x] Etapa 5 — Perfil + IA personalizada.
+- [x] Etapa 6 — Metas, hábitos, humor, revisão semanal.
+
+Próximos (V2.x): lembretes por notificação (push), recuperação de senha, gráficos de evolução mensal das finanças, importação de extrato (OFX/CSV), compartilhar finanças/despensa com a família.
