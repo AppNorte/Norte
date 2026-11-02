@@ -11,6 +11,7 @@ import { DAILY_VERSES, pickByDay, SHORT_QUOTES } from "@/lib/content";
 import { clockTime, dayPart, greeting, longDate, toDateKey } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
 import { useAppState } from "@/store/StoreProvider";
+import { money, totalBalance, upcomingBills } from "@/lib/finance/logic";
 import {
   bibleStatus,
   bookStatus,
@@ -41,6 +42,9 @@ export default function Hoje() {
   const book = currentBook(s);
   const bs = bookStatus(s, book, today);
   const family = [...s.family].sort((a, b) => a.sortOrder - b.sortOrder);
+  const bills = upcomingBills(s.finance, today, 3).filter((b) => !b.income);
+  const billsTotal = bills.reduce((acc, b) => acc + b.amount, 0);
+  const lateBills = bills.filter((b) => b.overdue).length;
 
   return (
     <>
@@ -177,6 +181,27 @@ export default function Hoje() {
               </div>
             </Link>
           </div>
+        </Card>
+
+        <Card>
+          <CardHead title="Finanças" sub="Seu dinheiro com direção." action={<HeadLink href="/financas">Ver finanças</HeadLink>} />
+          {s.finance.transactions.length === 0 ? (
+            <Link href="/financas" className="empty" style={{ display: "block" }}>
+              Comece registrando seus gastos e entradas. <span className="inline-link">Abrir Finanças</span>
+            </Link>
+          ) : (
+            <div className="fin-today">
+              <Link href="/financas" className="mini">
+                <div className="mini-title">Saldo em contas</div>
+                <div className={`balance-sm ${totalBalance(s.finance) < 0 ? "neg" : ""}`}>{money(totalBalance(s.finance), s.finance.hideValues)}</div>
+              </Link>
+              <Link href="/financas" className="mini">
+                <div className="mini-title">A pagar (3 dias)</div>
+                <div className={`balance-sm ${lateBills ? "neg" : ""}`}>{bills.length ? money(billsTotal, s.finance.hideValues) : "Nada"}</div>
+                <div className="mini-foot">{lateBills ? `${lateBills} atrasada(s)` : bills.length ? `${bills.length} conta(s)` : "Tudo em dia"}</div>
+              </Link>
+            </div>
+          )}
         </Card>
 
         <Card>

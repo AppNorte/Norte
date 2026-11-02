@@ -236,7 +236,15 @@ export function useToast() {
 
 // ---------- Campo ----------
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** Rótulo + campo. Use `group` quando o conteúdo tiver vários botões (chips): vira um grupo acessível. */
+export function Field({ label, children, group }: { label: string; children: React.ReactNode; group?: boolean }) {
+  if (group)
+    return (
+      <div className="field" role="group" aria-label={label}>
+        <span>{label}</span>
+        {children}
+      </div>
+    );
   return (
     <label className="field">
       <span>{label}</span>

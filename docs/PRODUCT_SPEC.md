@@ -77,3 +77,30 @@ O usuário passa muito tempo no celular, tem dificuldade de manter uma rotina co
 - Evitar excesso de gráficos.
 - A IA deve ser curta, prática e contextual.
 - O app não pode depender da IA para funcionar.
+
+
+---
+
+# V2 — NORTE: um novo rumo na vida
+
+Decisão do dono do produto (nov/2026): o NORTE passa a ser um app completo de desenvolvimento pessoal.
+Itens antes "fora da V1" que agora entram: **financeiro pessoal completo** e **organização da casa (despensa)**.
+Continuam fora: DaylinTech/CRM, estoque empresarial, rede social, prescrição de dieta/conduta médica.
+
+## Navegação
+Hoje · Finanças · Casa · Rotina · Mais — e o Assistente como botão flutuante.
+
+## Etapas
+1. **Base**: login opcional, dados salvos na nuvem (Supabase) e no aparelho; novo menu.
+2. **Finanças** (só do usuário, por enquanto):
+   - contas (corrente, poupança, carteira, investimento) com saldo;
+   - lançamentos de receita, despesa e transferência; pagos ou pendentes;
+   - cartões de crédito com limite, dia de fechamento e vencimento, fatura por mês e pagamento da fatura;
+   - compras parceladas; lançamentos fixos mensais (recorrentes);
+   - categorias com orçamento mensal; resumo do mês; saldo previsto; contas a pagar.
+3. **Casa / Despensa**: estoque de alimentos, validade, lista de compras gerada pelo que acabou, histórico de preços.
+4. **Fé e força**: mensagem diária, versículo, diário de gratidão e oração.
+5. **IA que conhece o usuário**: "Meu perfil" preenchido e aprovado pelo usuário; mensagens e conselhos personalizados; o usuário vê e apaga o que a IA sabe.
+6. **Desenvolvimento pessoal**: metas com etapas, hábitos com sequência, humor/energia, revisão semanal, conquistas.
+
+Regras que continuam valendo: IA só propõe e o usuário confirma; chaves só no servidor; o app funciona sem IA.

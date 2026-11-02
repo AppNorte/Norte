@@ -305,7 +305,7 @@ function AgendaForm({ defaultTime, today, onClose }: { defaultTime: string; toda
       <Field label="Horário">
         <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
       </Field>
-      <Field label="Tipo">
+      <Field label="Tipo" group>
         <div className="chips">
           {cats.map((c) => (
             <button key={c.key} type="button" className="chip" aria-pressed={category === c.key} onClick={() => setCategory(c.key)}>

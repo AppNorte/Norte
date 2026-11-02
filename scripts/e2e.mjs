@@ -76,10 +76,10 @@ try {
 
   // ---------- Navegação 5 abas ----------
   const tabs = [
+    ["Finanças", "/financas"],
+    ["Casa", "/casa"],
     ["Rotina", "/rotina"],
-    ["Leitura", "/leitura"],
-    ["Família", "/familia"],
-    ["Assistente", "/assistente"],
+    ["Mais", "/mais"],
     ["Hoje", "/hoje"],
   ];
   let navOk = true;
@@ -113,7 +113,8 @@ try {
   await page.reload();
 
   // ---------- Leitura ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Leitura" }).click();
+  await page.goto(`${BASE}/mais`);
+  await page.getByRole("link", { name: /Leitura/ }).click();
   await page.getByRole("heading", { name: "Bíblia" }).waitFor();
   check("Leitura: plano bíblico mostra progresso", await page.getByText("0 de 21 capítulos").isVisible());
   await page.getByRole("button", { name: "Ver detalhes" }).click();
@@ -143,7 +144,8 @@ try {
   check("Sem rolagem horizontal (390px) em Leitura", await noHorizontalScroll(page));
 
   // ---------- Família ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Família" }).click();
+  await page.goto(`${BASE}/mais`);
+  await page.getByRole("link", { name: /Família/ }).click();
   await page.getByRole("heading", { name: "Esta semana" }).waitFor();
   const names = await Promise.all(["Tempo com Bia", "Tempo com Isabella", "Tempo com Davi"].map((n) => page.getByText(n).isVisible()));
   check("Família: mostra Bia, Isabella e Davi", names.every(Boolean));
@@ -160,6 +162,56 @@ try {
   check("Família: progresso semanal leve", await page.getByRole("progressbar", { name: /Tempo com Davi: 1 de 3/ }).isVisible());
   await shot(page, "06-familia");
 
+
+  // ---------- Finanças ----------
+  await page.getByRole("navigation").getByRole("link", { name: "Finanças" }).click();
+  await page.getByText("Saldo em contas").first().waitFor();
+  // Saldo inicial da conta principal
+  await page.getByRole("button", { name: "Gerenciar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /Conta principal/ }).click();
+  await page.getByRole("dialog").getByLabel(/Saldo inicial/).fill("1.000,00");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar conta" }).click();
+  await page.getByRole("button", { name: "Fechar" }).click();
+  check("Finanças: saldo da conta", await page.locator(".balance").getByText("R$ 1.000,00").isVisible());
+  // Despesa à vista
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("150,50");
+  await page.getByRole("dialog").getByRole("button", { name: /Mercado/ }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  check("Finanças: despesa reduz o saldo", await page.locator(".balance").getByText("R$ 849,50").isVisible());
+  // Receita a receber
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("tab", { name: "Receita" }).click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("3000");
+  await page.getByRole("dialog").getByRole("switch", { name: "Pago" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  check("Finanças: receita pendente entra no previsto", await page.locator(".forecast").getByText("R$ 3.849,50").isVisible());
+  // Cartão + compra parcelada
+  await page.getByRole("button", { name: "Adicionar" }).first().click();
+  await page.getByRole("dialog").getByLabel("Nome do cartão").fill("Nubank");
+  await page.getByRole("dialog").getByLabel("Limite").fill("2000");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar cartão" }).click();
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("600");
+  await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Tênis");
+  await page.getByRole("dialog").getByRole("button", { name: /Nubank \(cartão\)/ }).click();
+  await page.getByRole("dialog").getByRole("combobox").selectOption("3");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  const parcels = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.filter((t) => t.installment).map((t) => [t.amount, t.invoiceMonth]));
+  check("Finanças: compra em 3x no cartão", parcels.length === 3 && parcels.every((p) => p[0] === 20000) && new Set(parcels.map((p) => p[1])).size === 3);
+  check("Finanças: parcela conta no mês certo", await page.locator(".io.out").getByText("R$ 350,50").isVisible());
+  check("Finanças: compra no cartão não mexe no saldo", await page.locator(".balance").getByText("R$ 849,50").isVisible());
+  await page.locator(".card-row").first().click();
+  check("Finanças: fatura mostra a parcela", await page.getByRole("dialog").getByText(/Tênis/).first().isVisible());
+  await page.getByRole("button", { name: "Fechar" }).click();
+  check("Finanças: limite disponível", await page.getByText("Disponível R$ 1.400,00").isVisible());
+  // Esconder valores
+  await page.getByRole("button", { name: "Esconder valores" }).click();
+  check("Finanças: esconder valores", await page.locator(".balance").getByText("R$ •••••").isVisible());
+  await page.getByRole("button", { name: "Mostrar valores" }).click();
+  check("Sem rolagem horizontal (390px) em Finanças", await noHorizontalScroll(page));
+  await shot(page, "09-financas");
+
   // ---------- Meu dia ----------
   await page.getByRole("navigation").getByRole("link", { name: "Hoje" }).click();
   await page.getByRole("link", { name: /ver meu dia/ }).click();
@@ -172,7 +224,7 @@ try {
   await shot(page, "07-meu-dia");
 
   // ---------- Assistente ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Assistente" }).click();
+  await page.getByRole("link", { name: "Falar com o Assistente NORTE" }).click();
   await page.getByRole("button", { name: "Estou no celular. O que posso fazer agora?" }).click();
   await page.getByText(/sugestões para aproveitar/).waitFor({ timeout: 10000 });
   check("Assistente: responde em modo mock", true);
@@ -207,7 +259,7 @@ try {
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente"]) {
+  for (const url of ["/hoje", "/financas", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

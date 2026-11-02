@@ -16,6 +16,8 @@ export const SCREEN_QUOTES = {
 export const SCREEN_VERSES: Record<string, Verse> = {
   leitura: { text: "Lâmpada para os meus pés é a tua palavra, e luz para o meu caminho.", ref: "Salmos 119:105" },
   meuDia: { text: "Tudo tem o seu tempo determinado, e há tempo para todo o propósito debaixo do céu.", ref: "Eclesiastes 3:1" },
+  financas: { text: "Quem é fiel no pouco, também é fiel no muito.", ref: "Lucas 16:10" },
+  casa: { text: "Com sabedoria se constrói a casa, e com entendimento ela se firma.", ref: "Provérbios 24:3" },
   assistente: { text: "Ensina-nos a contar os nossos dias, para que alcancemos um coração sábio.", ref: "Salmos 90:12" },
 };
 

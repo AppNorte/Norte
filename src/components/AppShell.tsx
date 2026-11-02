@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/StoreProvider";
 import { BottomNav } from "./BottomNav";
 import { Compass } from "./Compass";
@@ -10,6 +11,7 @@ import { Compass } from "./Compass";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { state, hydrated } = useStore();
   const router = useRouter();
+  const path = usePathname();
 
   useEffect(() => {
     if (hydrated && !state) router.replace("/");
@@ -26,6 +28,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <main>{children}</main>
+      {!path.startsWith("/assistente") && (
+        <Link href="/assistente" className="fab-ai" aria-label="Falar com o Assistente NORTE">
+          <Compass size={34} ring={false} />
+        </Link>
+      )}
       <BottomNav />
     </>
   );

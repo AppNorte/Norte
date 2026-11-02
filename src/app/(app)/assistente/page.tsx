@@ -24,6 +24,11 @@ const QUICK = [
   "Não consegui fazer uma prioridade",
 ];
 
+/** Marca o estado como alterado agora (usado na sincronização). */
+function touch(s: { updatedAt: number }) {
+  s.updatedAt = Date.now();
+}
+
 function toChatMessage(r: AssistantReply, offline: boolean): ChatMessage {
   const now = new Date().toISOString();
   return {
@@ -92,6 +97,7 @@ export default function Assistente() {
     const msg = draft.messages.find((m) => m.id === msgId);
     const act = msg?.actions?.find((a) => a.id === action.id);
     if (!msg || !act || act.status !== "proposed") return;
+    touch(draft);
     if (!confirm) {
       act.status = "rejected";
       replace(draft);

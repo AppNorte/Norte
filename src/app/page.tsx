@@ -6,6 +6,8 @@ import { Backdrop } from "@/components/Backdrop";
 import { Compass } from "@/components/Compass";
 import { Cta } from "@/components/ui";
 import { useStore } from "@/store/StoreProvider";
+import { syncConfigured } from "@/store/SyncProvider";
+import Link from "next/link";
 
 export default function Splash() {
   const { state, hydrated } = useStore();
@@ -30,6 +32,11 @@ export default function Splash() {
       </p>
       <div className="splash-foot">
         <Cta href="/onboarding">Começar</Cta>
+        {syncConfigured && (
+          <Link href="/entrar" className="splash-login">
+            Já tenho conta · Entrar
+          </Link>
+        )}
         <p className="splash-pillars" aria-label="Rotina, Leitura, Família, IA">
           Rotina<span>•</span>Leitura<span>•</span>Família<span>•</span>IA
         </p>

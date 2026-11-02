@@ -44,3 +44,16 @@
 - performance;
 - erros/offline;
 - telemetria mínima e opcional.
+
+
+---
+
+# V2 — Plano
+
+- [x] V1 (Fases 1, 2, 4 parcial e 5 parcial) publicada.
+- [ ] Etapa 1 — Base: menu Hoje/Finanças/Casa/Rotina/Mais, Assistente flutuante, login e sincronização com Supabase (`app_state` em JSONB por usuário, último a salvar vence).
+- [ ] Etapa 2 — Finanças completas.
+- [ ] Etapa 3 — Casa / Despensa.
+- [ ] Etapa 4 — Fé e força.
+- [ ] Etapa 5 — Perfil + IA personalizada.
+- [ ] Etapa 6 — Metas, hábitos, humor, revisão semanal.

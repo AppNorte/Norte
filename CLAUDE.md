@@ -15,23 +15,22 @@ Leia nesta ordem antes de alterar código:
 
 ## Objetivo
 
-Construir uma PWA mobile-first de organização pessoal baseada em cinco pilares:
+Construir uma PWA mobile-first de desenvolvimento pessoal: NORTE é um novo rumo na vida.
 
-- Hoje
-- Rotina
-- Leitura
-- Família
-- Assistente NORTE
+V2 (aprovada pelo dono do produto): menu inferior com **Hoje · Finanças · Casa · Rotina · Mais**.
+O Assistente NORTE é um botão flutuante (bússola) disponível nas telas principais.
+Em "Mais": Leitura, Família, Meu dia, Assistente, Conta/Nuvem e Ajustes (e, nas próximas etapas, Fé, Metas e Perfil).
 
-Existe também a tela secundária `Meu dia` e um onboarding inicial.
+Existe também a tela secundária `Meu dia` e um onboarding inicial. Ver `docs/PRODUCT_SPEC.md` (seção V2).
 
 ## Regras obrigatórias
 
-- Não invente novos módulos na V1.
-- Não transforme o app em ERP, CRM, financeiro ou app da DaylinTech nesta fase.
+- Siga o escopo e a ordem da V2 em `docs/PRODUCT_SPEC.md` e `docs/BUILD_PLAN.md`; não invente módulos fora dele.
+- Finanças são pessoais (controle de entradas, saídas, contas e cartões). Não transforme o app em ERP, CRM ou app da DaylinTech.
+- Valores em dinheiro sempre em centavos inteiros; formatação pt-BR (R$).
 - Preserve o design premium, calmo e minimalista dos mockups.
 - Priorize Android mobile e telas estreitas, mas mantenha responsividade desktop.
-- O menu principal deve ter: Hoje, Rotina, Leitura, Família, Assistente.
+- O menu principal deve ter: Hoje, Finanças, Casa, Rotina, Mais (+ Assistente flutuante).
 - A IA deve operar por ferramentas autorizadas; não pode alterar banco diretamente.
 - Toda ação destrutiva ou de alteração importante feita pela IA deve pedir confirmação.
 - API keys somente no servidor / variáveis de ambiente.

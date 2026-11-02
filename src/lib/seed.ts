@@ -2,6 +2,7 @@ import seed from "../../seed.example.json";
 import type { AppState, FocusArea, IconKey, RoutineItem } from "./types";
 import { toDateKey } from "./dates";
 import { uid } from "./id";
+import { defaultFinance } from "./finance/defaults";
 
 /** Sugere um ícone a partir do título (o usuário pode trocar depois). */
 export function guessIcon(title: string): IconKey {
@@ -119,7 +120,8 @@ export function buildInitialState(input: OnboardingInput = onboardingDefaults())
 
   const bibleId = uid();
   return {
-    version: 1,
+    version: 2,
+    updatedAt: Date.now(),
     onboarded: true,
     profile: {
       displayName: input.displayName.trim() || seed.profile.displayName,
@@ -173,5 +175,6 @@ export function buildInitialState(input: OnboardingInput = onboardingDefaults())
     weeklyFamilyGoal: 3,
     agenda: [],
     messages: [],
+    finance: defaultFinance(),
   };
 }

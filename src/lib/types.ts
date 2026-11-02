@@ -178,8 +178,85 @@ export interface ChatMessage {
   offline?: boolean;
 }
 
+// ---------- Finanças (valores SEMPRE em centavos) ----------
+
+export type AccountType = "checking" | "savings" | "cash" | "investment";
+
+export interface FinAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  initialBalance: number; // centavos
+  color: string;
+  archived: boolean;
+}
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  limit: number; // centavos
+  closingDay: number; // dia em que a fatura fecha
+  dueDay: number; // dia de vencimento
+  color: string;
+  archived: boolean;
+}
+
+export type CategoryKind = "expense" | "income";
+
+export interface FinCategory {
+  id: string;
+  name: string;
+  kind: CategoryKind;
+  icon: string; // chave de ícone financeiro
+  color: string;
+  budget: number | null; // orçamento mensal (centavos), só despesas
+}
+
+export type TxKind = "expense" | "income" | "transfer" | "card_payment";
+
+export interface Transaction {
+  id: string;
+  kind: TxKind;
+  amount: number; // centavos, sempre positivo
+  date: string; // YYYY-MM-DD
+  description: string;
+  categoryId: string | null;
+  accountId: string | null; // origem (despesa/transferência/pagamento) ou destino (receita)
+  toAccountId: string | null; // destino da transferência
+  cardId: string | null; // compra no cartão ou pagamento de fatura
+  invoiceMonth: string | null; // "YYYY-MM" da fatura (compras no cartão e pagamentos)
+  paid: boolean;
+  installment: { groupId: string; n: number; total: number } | null;
+  recurringId: string | null;
+  notes: string;
+  createdAt: string;
+}
+
+export interface Recurring {
+  id: string;
+  kind: "expense" | "income";
+  amount: number;
+  description: string;
+  categoryId: string | null;
+  accountId: string | null;
+  cardId: string | null;
+  day: number; // dia do mês
+  startMonth: string; // "YYYY-MM"
+  active: boolean;
+}
+
+export interface FinanceState {
+  accounts: FinAccount[];
+  cards: CreditCard[];
+  categories: FinCategory[];
+  transactions: Transaction[];
+  recurring: Recurring[];
+  hideValues: boolean;
+}
+
 export interface AppState {
-  version: 1;
+  version: 2;
+  updatedAt: number; // epoch ms da última alteração (sincronização)
   onboarded: boolean;
   profile: Profile;
   routine: RoutineItem[];
@@ -195,4 +272,5 @@ export interface AppState {
   weeklyFamilyGoal: number;
   agenda: AgendaItem[];
   messages: ChatMessage[];
+  finance: FinanceState;
 }

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { AppState } from "@/lib/types";
+import { migrate } from "./migrate";
 
 const STORAGE_KEY = "norte:v1";
 
@@ -19,9 +20,7 @@ function load(): AppState | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as AppState;
-    if (parsed?.version !== 1 || !parsed.onboarded) return null;
-    return parsed;
+    return migrate(JSON.parse(raw));
   } catch {
     return null;
   }
@@ -71,6 +70,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const draft = structuredClone(prev);
       recipe(draft);
+      draft.updatedAt = Date.now();
       return draft;
     });
   }, []);

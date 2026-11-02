@@ -1,6 +1,23 @@
 # NORTE
 
-PWA mobile-first de organização pessoal: **Hoje, Rotina, Leitura, Família e Assistente NORTE**, além de **Meu dia** e do onboarding.
+PWA mobile-first de desenvolvimento pessoal: um novo rumo na vida.
+Menu: **Hoje · Finanças · Casa · Rotina · Mais**, com o **Assistente NORTE** como botão flutuante.
+Em "Mais": Leitura, Família, Meu dia, Assistente, Conta e nuvem, Ajustes.
+
+## Nuvem (Supabase), opcional mas recomendado
+
+1. Crie um projeto grátis em supabase.com.
+2. Em **SQL Editor → New query**, cole o conteúdo de `supabase/setup.sql` e clique em **Run**.
+3. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public**.
+4. Na Vercel (**Settings → Environment Variables**), crie `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` e faça **Redeploy**.
+5. No Supabase, em **Authentication → URL Configuration**, coloque o endereço do app em **Site URL** (para o link de confirmação de e-mail).
+
+Sem essas variáveis o app funciona normalmente, salvando só no aparelho.
+A sincronização guarda o estado inteiro do usuário em `app_state` (JSONB, com RLS). No primeiro login em um aparelho, a nuvem vence e a cópia local vira backup em `norte:backup`. Depois disso, vence a alteração mais recente.
+
+## Finanças
+
+Contas com saldo, receitas, despesas e transferências (pagas ou pendentes), cartões de crédito (limite, fechamento, vencimento, fatura por mês e pagamento), compras parceladas, lançamentos fixos mensais, categorias com orçamento, previsão do fim do mês e contas a pagar e receber. Valores sempre em centavos (`src/lib/finance/logic.ts`).
 
 Especificação em `docs/` e referências visuais em `mockups/`.
 

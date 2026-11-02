@@ -62,7 +62,7 @@ function Form({ mode, memberId, onClose }: { mode: MomentMode; memberId: string 
 
   return (
     <form onSubmit={submit}>
-      <Field label="Com quem?">
+      <Field label="Com quem?" group>
         <div className="chips" role="group">
           {options.map((o) => (
             <button key={o.key} type="button" className="chip" aria-pressed={who === o.key} onClick={() => setWho(o.key)}>

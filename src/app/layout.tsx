@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/store/StoreProvider";
+import { SyncProvider } from "@/store/SyncProvider";
 import { ToastProvider } from "@/components/ui";
 import { ServiceWorker } from "@/components/ServiceWorker";
 
@@ -30,9 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={inter.variable}>
       <body>
         <StoreProvider>
-          <ToastProvider>
-            <div className="app">{children}</div>
-          </ToastProvider>
+          <SyncProvider>
+            <ToastProvider>
+              <div className="app">{children}</div>
+            </ToastProvider>
+          </SyncProvider>
         </StoreProvider>
         <ServiceWorker />
       </body>
