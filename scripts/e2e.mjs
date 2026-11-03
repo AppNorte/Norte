@@ -220,6 +220,12 @@ try {
   check("Finanças: não duplica ao importar de novo", true);
   await page.getByRole("button", { name: "Fechar" }).click();
 
+
+  // Atalho "Escanear nota" abre a câmera direto
+  await page.getByRole("button", { name: "Escanear nota" }).click();
+  check("Nota fiscal: atalho abre a leitura do QR", await page.getByRole("dialog", { name: "Ler QR Code da nota" }).isVisible());
+  await page.getByRole("dialog", { name: "Ler QR Code da nota" }).getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("button", { name: "Fechar" }).click();
   // Nota fiscal: foto com QR Code da NFC-e
   await page.getByRole("button", { name: "Novo lançamento" }).click();
   await page.getByRole("dialog").getByLabel("Escolher foto da nota").setInputFiles(path.resolve("scripts/fixtures/nfce-qr.png"));

@@ -3390,3 +3390,33 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   top: calc(var(--safe-t) + 12px);
   right: 12px;
 }
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.qa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.qa-main {
+  background: var(--green);
+  color: #fff;
+}
+
+.qa:active {
+  transform: scale(0.98);
+}

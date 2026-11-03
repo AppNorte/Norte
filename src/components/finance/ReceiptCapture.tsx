@@ -16,6 +16,7 @@ export function ReceiptCapture({
   onQr,
   onAi,
   onRemove,
+  autoScan = false,
 }: {
   photoUrl: string | null;
   busy: boolean;
@@ -26,11 +27,12 @@ export function ReceiptCapture({
   onQr: (text: string) => void;
   onAi: () => void;
   onRemove: () => void;
+  autoScan?: boolean;
 }) {
   const cam = useRef<HTMLInputElement>(null);
   const gal = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const [scanning, setScanning] = useState(false);
+  const [scanning, setScanning] = useState(autoScan);
   const [view, setView] = useState(false);
 
   const take = async (f: File | undefined | null) => {

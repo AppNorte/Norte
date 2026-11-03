@@ -1,5 +1,5 @@
 // NORTE — service worker simples: app shell offline.
-const CACHE = "norte-v1";
+const CACHE = "norte-v3";
 const SHELL = ["/", "/hoje", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/onboarding", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

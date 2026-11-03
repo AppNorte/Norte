@@ -2,11 +2,27 @@
 
 import { useEffect } from "react";
 
-/** Registra o service worker (só em produção) para instalação e uso offline. */
+/** Registra o service worker (só em produção) e aplica versões novas sozinho. */
 export function ServiceWorker() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    let reloaded = false;
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    const onChange = () => {
+      // Só recarrega quando uma versão nova assume (não na primeira instalação).
+      if (reloaded || !hadController) return;
+      reloaded = true;
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", onChange);
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .then((reg) => {
+        const check = () => document.visibilityState === "visible" && reg.update().catch(() => {});
+        document.addEventListener("visibilitychange", check);
+      })
+      .catch(() => {});
+    return () => navigator.serviceWorker.removeEventListener("controllerchange", onChange);
   }, []);
   return null;
 }

@@ -19,17 +19,17 @@ import { uid } from "@/lib/id";
 
 type Kind = Exclude<TxKind, "card_payment">;
 
-export function TxForm({ open, onClose, editId, initialKind = "expense" }: { open: boolean; onClose: () => void; editId?: string | null; initialKind?: Kind }) {
+export function TxForm({ open, onClose, editId, initialKind = "expense", scan = false }: { open: boolean; onClose: () => void; editId?: string | null; initialKind?: Kind; scan?: boolean }) {
   const { s } = useAppState();
   const editing = editId ? s.finance.transactions.find((t) => t.id === editId) : undefined;
   return (
     <Modal open={open} onClose={onClose} title={editing ? "Editar lançamento" : "Novo lançamento"}>
-      {open && <Form key={editId ?? "new"} onClose={onClose} editing={editing} initialKind={initialKind} />}
+      {open && <Form key={`${editId ?? "new"}-${scan}`} onClose={onClose} editing={editing} initialKind={initialKind} scan={scan} />}
     </Modal>
   );
 }
 
-function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?: Transaction; initialKind: Kind }) {
+function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; editing?: Transaction; initialKind: Kind; scan: boolean }) {
   const { s, mutate } = useAppState();
   const toast = useToast();
   const f = s.finance;
@@ -258,6 +258,7 @@ function Form({ onClose, editing, initialKind }: { onClose: () => void; editing?
             onPhoto={handlePhoto}
             onQr={handleQr}
             onAi={() => void readWithAi()}
+            autoScan={scan}
             onRemove={() => {
               setPhoto(null);
               setKeepAttachment(false);

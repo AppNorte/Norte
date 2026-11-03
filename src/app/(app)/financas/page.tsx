@@ -8,7 +8,7 @@ import { AccountIcon, CatDot } from "@/components/finance/FinIcon";
 import { TxForm } from "@/components/finance/TxForm";
 import { MonthlyChart } from "@/components/finance/MonthlyChart";
 import { ImportSheet } from "@/components/finance/ImportSheet";
-import { FileUp } from "lucide-react";
+import { FileUp, Plus, ScanLine } from "lucide-react";
 import { AccountsSheet, AllTxSheet, BudgetSheet, CardForm, InvoiceSheet, TxRow } from "@/components/finance/Sheets";
 import { SCREEN_VERSES } from "@/lib/content";
 import { toDateKey } from "@/lib/dates";
@@ -39,7 +39,7 @@ export default function Financas() {
   const now = useNow();
   const today = toDateKey(now);
   const [month, setMonth] = useState(monthOf(today));
-  const [tx, setTx] = useState<{ id?: string | null } | null>(null);
+  const [tx, setTx] = useState<{ id?: string | null; scan?: boolean } | null>(null);
   const [sheet, setSheet] = useState<null | "accounts" | "all" | "budget" | "newCard" | "import">(null);
   const [inv, setInv] = useState<{ cardId: string; month: string } | null>(null);
   const [editCard, setEditCard] = useState<string | null>(null);
@@ -124,6 +124,21 @@ export default function Financas() {
             </p>
           )}
         </Card>
+
+        <div className="quick-actions">
+          <button type="button" className="qa" onClick={() => setTx({})}>
+            <Plus size={22} />
+            <span>Lançar</span>
+          </button>
+          <button type="button" className="qa qa-main" onClick={() => setTx({ scan: true })}>
+            <ScanLine size={22} />
+            <span>Escanear nota</span>
+          </button>
+          <button type="button" className="qa" onClick={() => setSheet("import")}>
+            <FileUp size={22} />
+            <span>Extrato</span>
+          </button>
+        </div>
 
         {isCurrent && (
           <Card>
@@ -298,7 +313,7 @@ export default function Financas() {
         </button>
       </div>
 
-      <TxForm open={tx !== null} editId={tx?.id ?? null} onClose={() => setTx(null)} />
+      <TxForm open={tx !== null} editId={tx?.id ?? null} scan={Boolean(tx?.scan)} onClose={() => setTx(null)} />
       <ImportSheet open={sheet === "import"} onClose={() => setSheet(null)} />
       <AccountsSheet open={sheet === "accounts"} onClose={() => setSheet(null)} />
       <BudgetSheet open={sheet === "budget"} onClose={() => setSheet(null)} spend={spend} />
