@@ -314,6 +314,18 @@ try {
   await page.goto(`${BASE}/conta`);
   const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Baixar backup" }).click()]);
   const backup = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
+  const backupFile = await dl.path();
+  {
+    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "pt-BR" });
+    const p2 = await ctx2.newPage();
+    await p2.goto(`${BASE}/`);
+    await p2.getByRole("link", { name: /Tenho um backup/ }).click();
+    await p2.getByLabel("Arquivo de backup").setInputFiles(backupFile);
+    await p2.getByRole("button", { name: "Restaurar agora" }).click();
+    await p2.waitForURL("**/hoje");
+    check("Backup: restaurar num link/aparelho novo", await p2.getByRole("heading", { name: /Daylerson/ }).isVisible());
+    await ctx2.close();
+  }
   check("Backup: arquivo com todos os dados", backup.app === "NORTE" && Array.isArray(backup.state.finance.transactions) && backup.state.pantry.items.length > 0);
 
   // ---------- Meu dia ----------

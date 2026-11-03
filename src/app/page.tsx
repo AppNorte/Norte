@@ -37,6 +37,9 @@ export default function Splash() {
             Já tenho conta · Entrar
           </Link>
         )}
+        <Link href="/restaurar" className="splash-login" style={{ display: "flex", justifyContent: "center" }}>
+          Tenho um backup · Restaurar
+        </Link>
         <p className="splash-pillars" aria-label="Fé, Rotina, Finanças, Casa, Família, IA">
           Fé<span>•</span>Rotina<span>•</span>Finanças<span>•</span>Casa<span>•</span>Família<span>•</span>IA
         </p>

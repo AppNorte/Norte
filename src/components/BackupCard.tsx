@@ -62,14 +62,16 @@ export function BackupCard() {
     <Card>
       <CardHead title="Backup" sub="Um arquivo com todos os seus dados. Útil para trocar de celular ou se precaver." />
       <p className="card-sub" style={{ marginTop: -4 }}>
-        {last ? `Último backup: ${new Date(last).toLocaleDateString("pt-BR")}.` : "Você ainda não fez nenhum backup."}
+        {!state ? "Escolha o arquivo norte-backup-….json que você baixou." : last ? `Último backup: ${new Date(last).toLocaleDateString("pt-BR")}.` : "Você ainda não fez nenhum backup."}
       </p>
       <div className="btn-row" style={{ marginTop: 10 }}>
-        <button type="button" className="btn primary" onClick={download}>
-          <Download size={18} /> Baixar backup
-        </button>
-        <button type="button" className="btn" onClick={() => input.current?.click()}>
-          <Upload size={18} /> Restaurar
+        {state && (
+          <button type="button" className="btn primary" onClick={download}>
+            <Download size={18} /> Baixar backup
+          </button>
+        )}
+        <button type="button" className={`btn ${state ? "" : "primary block"}`} onClick={() => input.current?.click()}>
+          <Upload size={18} /> {state ? "Restaurar" : "Escolher arquivo de backup"}
         </button>
         <input ref={input} type="file" accept="application/json,.json" hidden onChange={(e) => onFile(e.target.files?.[0])} aria-label="Arquivo de backup" />
       </div>
@@ -77,7 +79,7 @@ export function BackupCard() {
         <div className="empty" role="alert" style={{ marginTop: 12 }}>
           <p style={{ margin: "0 0 10px" }}>
             Restaurar o backup de <b>{pending.profile.displayName}</b>
-            {pending.updatedAt ? ` (salvo em ${new Date(pending.updatedAt).toLocaleDateString("pt-BR")})` : ""}? Os dados atuais deste aparelho serão substituídos.
+            {pending.updatedAt ? ` (salvo em ${new Date(pending.updatedAt).toLocaleDateString("pt-BR")})` : ""}? {state ? "Os dados atuais deste aparelho serão substituídos." : ""}
           </p>
           <div className="btn-row">
             <button
@@ -89,7 +91,7 @@ export function BackupCard() {
                 toast("Backup restaurado.");
               }}
             >
-              Substituir pelos dados do backup
+              {state ? "Substituir pelos dados do backup" : "Restaurar agora"}
             </button>
             <button type="button" className="btn sm" onClick={() => setPending(null)}>
               Cancelar
