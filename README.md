@@ -4,6 +4,14 @@ PWA mobile-first de desenvolvimento pessoal: um novo rumo na vida.
 Menu: **Hoje · Finanças · Casa · Rotina · Mais**, com o **Assistente NORTE** como botão flutuante.
 Em "Mais": Leitura, Família, Meu dia, Assistente, Conta e nuvem, Ajustes.
 
+## Publicação (igual DaylinTech e Biamarques)
+
+- Site: **https://appnorte.github.io/Norte/** (GitHub Pages, conta AppNorte). Cada push na `main` publica sozinho (`.github/workflows/pages.yml` → `npm run build:pages`).
+- Nuvem: Supabase **vcpnnlfakhlfshxcoxsu** (conta AppNorte). URL e chave *publishable* em `src/lib/publicConfig.ts` (públicas; nunca a secret/service_role).
+- Funções de servidor em `supabase/functions/` (Edge Functions, Deno): `nfce` (Sefaz, chamada com `x-region: sa-east-1`), `receipt`, `assistant`, `daily` (IA, desligadas até existir o segredo `ANTHROPIC_API_KEY` no projeto; o app usa o modo local).
+- Deploy de uma função: `POST https://api.supabase.com/v1/projects/<ref>/functions/deploy?slug=<nome>` (multipart: metadata + index.ts), com um token de acesso do Supabase.
+- `npm run build` continua gerando a versão com servidor (rotas `/api`), se um dia precisar de Vercel.
+
 ## Nuvem (Supabase), opcional mas recomendado
 
 1. Crie um projeto grátis em supabase.com.

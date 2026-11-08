@@ -28,6 +28,8 @@ export async function callApi(name: ApiName, body?: unknown, timeoutMs = 30_000)
   if (STATIC && SUPABASE_KEY) {
     headers.apikey = SUPABASE_KEY;
     headers.authorization = `Bearer ${SUPABASE_KEY}`;
+    // A Sefaz costuma bloquear acessos de fora do Brasil: roda a função em São Paulo.
+    if (name === "nfce") headers["x-region"] = "sa-east-1";
   }
   return fetch(url, {
     method: body === undefined ? "GET" : "POST",
