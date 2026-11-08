@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui";
 import { SCREEN_VERSES } from "@/lib/content";
 import { clockTime } from "@/lib/dates";
 import { uid } from "@/lib/id";
+import { callApi } from "@/lib/api";
 import { mockReply } from "@/lib/assistant/mock";
 import { KIND_META, sanitizeReply, type AssistantReply } from "@/lib/assistant/types";
 import type { ChatMessage, ProposedAction } from "@/lib/types";
@@ -75,12 +76,7 @@ export default function Assistente() {
     setPending(true);
     let reply: ChatMessage;
     try {
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text, history, context }),
-        signal: AbortSignal.timeout(35_000),
-      });
+      const res = await callApi("assistant", { message: text, history, context }, 35_000);
       if (!res.ok) throw new Error(String(res.status));
       reply = toChatMessage(sanitizeReply((await res.json()) as AssistantReply, "mock"), false);
     } catch {

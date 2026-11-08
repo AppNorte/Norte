@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Cloud, CloudOff, LogOut, RefreshCw } from "lucide-react";
 import { Card, CardHead, Field, useToast } from "./ui";
 import { getSupabase } from "@/lib/supabase";
+import { appUrl } from "@/lib/paths";
 import { syncConfigured, useSync } from "@/store/SyncProvider";
 
 function translate(msg: string): string {
@@ -75,7 +76,7 @@ export function AuthPanel() {
     const res =
       mode === "in"
         ? await sb.auth.signInWithPassword({ email: email.trim(), password })
-        : await sb.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/entrar` } });
+        : await sb.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: appUrl("/entrar") } });
     setBusy(false);
     if (res.error) {
       setMsg(translate(res.error.message));
@@ -137,7 +138,7 @@ export function AuthPanel() {
               return;
             }
             setBusy(true);
-            const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/entrar` });
+            const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: appUrl("/entrar") });
             setBusy(false);
             setMsg(error ? translate(error.message) : "Enviamos um link para o seu e-mail. Abra-o neste aparelho para criar uma nova senha.");
           }}

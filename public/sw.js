@@ -1,9 +1,16 @@
 // NORTE — service worker simples: app shell offline.
-const CACHE = "norte-v3";
-const SHELL = ["/", "/hoje", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/onboarding", "/icon.svg"];
+// Funciona na raiz (Vercel) ou numa subpasta (GitHub Pages /Norte/).
+const CACHE = "norte-v4";
+const BASE = new URL("./", self.location).pathname; // ex.: "/" ou "/Norte/"
+const SHELL = ["", "hoje/", "rotina/", "financas/", "casa/", "mais/", "assistente/", "onboarding/", "icon.svg"].map((p) => BASE + p);
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -15,10 +22,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  if (req.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith(BASE + "api/")) return;
 
   // Arquivos estáticos versionados: cache primeiro.
-  if (url.pathname.startsWith("/_next/static/")) {
+  if (url.pathname.includes("/_next/static/")) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>
@@ -43,6 +50,6 @@ self.addEventListener("fetch", (event) => {
         }
         return res;
       })
-      .catch(() => caches.match(req).then((hit) => hit || caches.match("/hoje"))),
+      .catch(() => caches.match(req).then((hit) => hit || caches.match(BASE + "hoje/") || caches.match(BASE))),
   );
 });

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { asset } from "@/lib/paths";
 import { StoreProvider } from "@/store/StoreProvider";
 import { SyncProvider } from "@/store/SyncProvider";
 import { ToastProvider } from "@/components/ui";
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
   applicationName: "NORTE",
   appleWebApp: { capable: true, title: "NORTE", statusBarStyle: "black-translucent" },
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: "/icon-192.png",
+    icon: [{ url: asset("/icon.svg"), type: "image/svg+xml" }],
+    apple: asset("/icon-192.png"),
   },
 };
 

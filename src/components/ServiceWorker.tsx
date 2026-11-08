@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { asset } from "@/lib/paths";
 
 /** Registra o service worker (só em produção) e aplica versões novas sozinho. */
 export function ServiceWorker() {
@@ -16,7 +17,7 @@ export function ServiceWorker() {
     };
     navigator.serviceWorker.addEventListener("controllerchange", onChange);
     navigator.serviceWorker
-      .register("/sw.js", { updateViaCache: "none" })
+      .register(asset("/sw.js"), { updateViaCache: "none", scope: asset("/") })
       .then((reg) => {
         const check = () => document.visibilityState === "visible" && reg.update().catch(() => {});
         document.addEventListener("visibilitychange", check);

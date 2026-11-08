@@ -16,6 +16,7 @@ import { guessCategory } from "@/lib/finance/categorize";
 import { dateInMonth } from "@/lib/finance/logic";
 import { addItemsToPantry } from "@/lib/pantry";
 import { uid } from "@/lib/id";
+import { callApi, serverAvailable } from "@/lib/api";
 
 type Kind = Exclude<TxKind, "card_payment">;
 
@@ -64,7 +65,7 @@ function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; ed
   const [aiAvailable, setAiAvailable] = useState(false);
 
   useEffect(() => {
-    fetch("/api/receipt")
+    callApi("receipt")
       .then((r) => r.json())
       .then((j: { ai?: boolean }) => setAiAvailable(Boolean(j.ai)))
       .catch(() => setAiAvailable(false));
@@ -113,12 +114,13 @@ function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; ed
     setRBusy(true);
     setRStatus("Nota encontrada. Buscando valor e itens na Sefaz…");
     try {
-      const r = await fetch("/api/nfce", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: q.url }), signal: AbortSignal.timeout(20_000) });
+      const r = await callApi("nfce", { url: q.url }, 20_000);
       const j = (await r.json()) as NfceDetails & { error?: string };
       if (!r.ok) throw new Error(j.error);
       applyDetails(j);
     } catch (e) {
-      setRStatus(`${e instanceof Error && e.message ? e.message : "Não consegui abrir a nota na Sefaz."} A nota ficou guardada; ${q.total ? "o valor já foi preenchido." : "digite o valor."}`);
+      const why = !serverAvailable() ? "A busca automática na Sefaz liga junto com a nuvem (Supabase)." : e instanceof Error && e.message ? e.message : "Não consegui abrir a nota na Sefaz.";
+      setRStatus(`${why} A nota ficou guardada; ${q.total ? "o valor já foi preenchido." : "digite o valor."}`);
     } finally {
       setRBusy(false);
     }
@@ -129,7 +131,7 @@ function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; ed
     setRBusy(true);
     setRStatus("Lendo a nota com IA…");
     try {
-      const r = await fetch("/api/receipt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image: await blobToBase64(blob) }), signal: AbortSignal.timeout(50_000) });
+      const r = await callApi("receipt", { image: await blobToBase64(blob) }, 50_000);
       const j = (await r.json()) as NfceDetails & { error?: string };
       if (!r.ok) throw new Error(j.error);
       applyDetails(j, true);

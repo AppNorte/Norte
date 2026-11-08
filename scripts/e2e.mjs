@@ -54,7 +54,7 @@ try {
   check("Onboarding abre a partir do Splash", true);
   await shot(page, "02-onboarding");
   await page.getByRole("button", { name: /Finalizar configuração/ }).click();
-  await page.waitForURL("**/hoje");
+  await page.waitForURL(/\/hoje\/?(\?.*)?$/);
   check("Onboarding leva para Hoje", true);
 
   // ---------- Hoje ----------
@@ -85,7 +85,7 @@ try {
   let navOk = true;
   for (const [label, url] of tabs) {
     await page.getByRole("navigation").getByRole("link", { name: label }).click();
-    await page.waitForURL(`**${url}`);
+    await page.waitForURL(new RegExp(url + "/?(\\?.*)?$"));
     navOk &&= (await page.getByRole("navigation").getByRole("link", { name: label }).getAttribute("aria-current")) === "page";
   }
   check("Navegação por 5 abas funciona", navOk);
@@ -322,7 +322,7 @@ try {
     await p2.getByRole("link", { name: /Tenho um backup/ }).click();
     await p2.getByLabel("Arquivo de backup").setInputFiles(backupFile);
     await p2.getByRole("button", { name: "Restaurar agora" }).click();
-    await p2.waitForURL("**/hoje");
+    await p2.waitForURL(/\/hoje\/?(\?.*)?$/);
     check("Backup: restaurar num link/aparelho novo", await p2.getByRole("heading", { name: /Daylerson/ }).isVisible());
     await ctx2.close();
   }
@@ -331,7 +331,7 @@ try {
   // ---------- Meu dia ----------
   await page.getByRole("navigation").getByRole("link", { name: "Hoje" }).click();
   await page.getByRole("link", { name: /ver meu dia/ }).click();
-  await page.waitForURL("**/meu-dia");
+  await page.waitForURL(/\/meu-dia\/?(\?.*)?$/);
   await page.getByRole("button", { name: "Adicionar" }).first().click();
   await page.getByRole("dialog").getByLabel("O quê?").fill("Resolver pendência");
   await page.getByRole("dialog").getByLabel("Horário").fill("16:30");

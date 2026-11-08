@@ -7,3 +7,5 @@ node_modules
 next-env.d.ts
 test-results
 screenshots
+.api-parked
+out

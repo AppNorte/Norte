@@ -5,6 +5,7 @@ import { pickLocalMessage } from "./messages";
 import { toDateKey } from "@/lib/dates";
 import type { AppState, DailyMessage } from "@/lib/types";
 import { useAppState } from "@/store/StoreProvider";
+import { callApi } from "@/lib/api";
 
 function signals(s: AppState, date: string) {
   const mood = s.growth.moods.find((m) => m.date === date);
@@ -38,12 +39,7 @@ export function useDailyMessage(): DailyMessage {
       save(local);
       return;
     }
-    fetch("/api/daily", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ date: today, name: s.profile.displayName, me: s.me, signals: signals(s, today) }),
-      signal: AbortSignal.timeout(30_000),
-    })
+    callApi("daily", { date: today, name: s.profile.displayName, me: s.me, signals: signals(s, today) }, 30_000)
       .then((r) => (r.ok ? (r.json() as Promise<DailyMessage>) : Promise.reject(new Error(String(r.status)))))
       .then((m) => save({ date: today, text: m.text, verse: m.verse ?? null, source: m.source === "ai" ? "ai" : "local" }))
       .catch(() => save(local));
