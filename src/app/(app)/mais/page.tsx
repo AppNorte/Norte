@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookOpen, CalendarClock, Cloud, Flame, Settings, Target, UserRound, Users } from "lucide-react";
+import { BellRing, BookOpen, CalendarClock, Cloud, Flame, Settings, Target, UserRound, Users } from "lucide-react";
 import { Compass } from "@/components/Compass";
 import { Hero } from "@/components/Hero";
 import { SettingsSheet } from "@/components/SettingsSheet";
@@ -20,6 +20,7 @@ export default function Mais() {
     { href: "/perfil", title: "Meu perfil", sub: "Para o NORTE te conhecer melhor", icon: <UserRound size={24} /> },
     { href: "/leitura", title: "Leitura", sub: "Bíblia, livro atual e reflexões", icon: <BookOpen size={24} /> },
     { href: "/familia", title: "Família", sub: "Pessoas importantes e momentos", icon: <Users size={24} /> },
+    { href: "/avisos", title: "Avisos", sub: "Notificações e Google Agenda", icon: <BellRing size={24} /> },
     { href: "/meu-dia", title: "Meu dia", sub: "Manhã, tarde e noite", icon: <CalendarClock size={24} /> },
     { href: "/assistente", title: "Assistente", sub: "Pergunte ao NORTE", icon: <Compass size={26} ring={false} /> },
     {

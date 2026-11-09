@@ -425,10 +425,30 @@ try {
   check("Falha da IA: responde em modo local", true);
   await page.unroute("**/api/assistant");
 
+  // ---------- Avisos e Google Agenda ----------
+  await page.goto(`${BASE}/financas`);
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("180");
+  await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Conta de luz");
+  await page.getByRole("dialog").locator('input[type=date][aria-label="Data"]').fill("2026-09-13");
+  await page.getByRole("dialog").getByRole("switch", { name: "Pago" }).click();
+  await page.getByRole("dialog").getByRole("switch", { name: "Repetir todo mês" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  await page.goto(`${BASE}/mais`);
+  await page.getByRole("link", { name: /Avisos/ }).click();
+  await page.getByText("Avisos no celular").waitFor();
+  check("Avisos: próximos 7 dias mostra a conta fixa", await page.locator(".sheet").getByText("Conta de luz").first().isVisible());
+  const gcal = await page.getByRole("link", { name: "Adicionar Conta de luz ao Google Agenda" }).getAttribute("href");
+  check("Avisos: Google Agenda com lembrete mensal no dia 13", Boolean(gcal?.startsWith("https://calendar.google.com/") && decodeURIComponent(gcal).includes("RRULE:FREQ=MONTHLY;BYMONTHDAY=13")), gcal ?? "");
+  await page.goto(`${BASE}/financas/transacoes`);
+  await page.getByText("Conta de luz").first().click();
+  check("Lançamento: botão Lembrar no Google Agenda", await page.getByRole("dialog").getByRole("link", { name: /Google Agenda/ }).isVisible());
+  await page.keyboard.press("Escape");
+
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil"]) {
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil", "/avisos"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

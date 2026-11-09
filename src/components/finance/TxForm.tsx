@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { CalendarPlus, Trash2 } from "lucide-react";
+import { gcalForTransaction } from "@/lib/calendar";
 import { Field, Modal, Toggle, useToast } from "@/components/ui";
 import { CatDot } from "./FinIcon";
 import { addDays, toDateKey } from "@/lib/dates";
@@ -416,6 +417,18 @@ function Form({ onClose, editing, initialKind, scan, cardId }: { onClose: () => 
       <button type="submit" className="btn primary block">
         {editing ? "Salvar alterações" : "Salvar lançamento"}
       </button>
+
+      {editing && (editing.kind === "expense" || editing.kind === "income") && !editing.cardId && (
+        <a
+          className="btn block"
+          style={{ marginTop: 10 }}
+          href={gcalForTransaction(editing, editing.recurringId ? f.recurring.find((r) => r.id === editing.recurringId) : null)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <CalendarPlus size={18} /> {editing.recurringId ? "Lembrar todo mês no Google Agenda" : "Lembrar no Google Agenda"}
+        </a>
+      )}
 
       {editing && (
         <div style={{ marginTop: 14 }}>

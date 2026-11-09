@@ -4045,3 +4045,18 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .rep-row small {
   color: var(--text-2);
 }
+
+/* Avisos: prévia da notificação */
+.notif-preview {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: var(--field);
+  font-size: 14.5px;
+  white-space: pre-line;
+}
+.notif-preview b {
+  font-size: 15px;
+}

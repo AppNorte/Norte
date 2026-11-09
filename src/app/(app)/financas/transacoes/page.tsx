@@ -30,11 +30,13 @@ export default function Transacoes() {
   const [cat, setCat] = useState("all");
   const [tx, setTx] = useState<{ id?: string | null } | null>(null);
 
-  // Atalhos vindos do Resumo: ?tipo=income|expense
+  // Atalhos vindos do Resumo e dos avisos: ?tipo=income|expense|transfer|pendentes
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tipo");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (t === "income" || t === "expense" || t === "transfer") setTipo(t);
+    if (t === "pendentes") setSit("pending");
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const list = monthTransactions(f, month).filter((t) => {

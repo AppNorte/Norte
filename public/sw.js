@@ -1,6 +1,6 @@
 // NORTE — service worker simples: app shell offline.
 // Funciona na raiz (Vercel) ou numa subpasta (GitHub Pages /Norte/).
-const CACHE = "norte-v4";
+const CACHE = "norte-v5";
 const BASE = new URL("./", self.location).pathname; // ex.: "/" ou "/Norte/"
 const SHELL = ["", "hoje/", "rotina/", "financas/", "casa/", "mais/", "assistente/", "onboarding/", "icon.svg"].map((p) => BASE + p);
 
@@ -51,5 +51,37 @@ self.addEventListener("fetch", (event) => {
         return res;
       })
       .catch(() => caches.match(req).then((hit) => hit || caches.match(BASE + "hoje/") || caches.match(BASE))),
+  );
+});
+
+// Avisos (Web Push): contas a vencer, leitura e resumo do dia.
+self.addEventListener("push", (event) => {
+  let d = {};
+  try {
+    d = event.data ? event.data.json() : {};
+  } catch {
+    d = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(d.title || "NORTE", {
+      body: d.body || "",
+      tag: d.tag || undefined,
+      icon: BASE + "icon-192.png",
+      badge: BASE + "icon-192.png",
+      data: { url: d.url || BASE + "hoje/" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || BASE + "hoje/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.startsWith(self.location.origin + BASE) && "navigate" in c) return c.focus().then(() => c.navigate(url));
+      }
+      return self.clients.openWindow(url);
+    }),
   );
 });
