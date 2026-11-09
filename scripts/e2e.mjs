@@ -456,6 +456,29 @@ try {
     narrow &&= ok;
   }
   check("Sem rolagem horizontal em 360px (todas as telas)", narrow);
+
+  // ---------- Computador (1280px): menu lateral, sem menu inferior ----------
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(`${BASE}/hoje`);
+  await page.locator(".side").waitFor();
+  check("Computador: menu lateral visível e menu inferior oculto", (await page.locator(".side").isVisible()) && !(await page.locator(".nav").isVisible()));
+  await page.locator(".side").getByRole("link", { name: "Finanças" }).click();
+  await page.waitForURL(/\/financas\/?$/);
+  check("Computador: navegar pelo menu lateral", (await page.locator(".side").getByRole("link", { name: "Finanças" }).getAttribute("aria-current")) === "page");
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.waitForTimeout(500); // fim da animação de entrada
+  const box = await page.getByRole("dialog").boundingBox();
+  check("Computador: janela centralizada", Boolean(box && box.y >= 20 && box.y + box.height <= 780 && Math.abs(box.x + box.width / 2 - 640) < 4), JSON.stringify(box));
+  await page.keyboard.press("Escape");
+  let wide = true;
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/cartoes", "/financas/relatorios", "/casa", "/rotina", "/mais", "/leitura", "/assistente", "/conta", "/avisos", "/metas"]) {
+    await page.goto(`${BASE}${url}`);
+    await page.locator(".sheet").waitFor();
+    const ok = await noHorizontalScroll(page);
+    if (!ok) console.log("   rolagem horizontal (1280px) em", url);
+    wide &&= ok;
+  }
+  check("Computador: sem rolagem horizontal", wide);
   check("Nenhum erro de JavaScript na página", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Execução do roteiro", false, e.message.split("\n")[0]);

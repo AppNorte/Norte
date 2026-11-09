@@ -64,7 +64,7 @@ export default function Transacoes() {
   return (
     <FinanceShell sub="Tudo o que entrou e saiu.">
       <MonthSwitch month={month} onChange={setMonth} />
-      <Card>
+      <Card className="wide">
         <label className="search">
           <Search size={18} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar lançamento" aria-label="Buscar lançamento" />
@@ -129,7 +129,7 @@ export default function Transacoes() {
         </span>
       </div>
 
-      <Card>
+      <Card className="wide">
         {list.length === 0 ? (
           <p className="empty">Nenhum lançamento encontrado.</p>
         ) : (

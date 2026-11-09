@@ -87,47 +87,67 @@ export function Backdrop({ variant = "header", className = "hero-backdrop" }: { 
   }
 
   return (
-    <svg className={className} viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <>
+      <HeaderScene className={`${className} bd-narrow`} wide={false} />
+      <HeaderScene className={`${className} bd-wide`} wide />
+    </>
+  );
+}
+
+/** Céu + montanhas. Na versão larga (computador) as montanhas se repetem espelhadas, sem esticar. */
+function HeaderScene({ className, wide }: { className: string; wide: boolean }) {
+  const W = wide ? 1200 : 400;
+  const id = (k: string) => `${wide ? "hw" : "hd"}-${k}`;
+  const sunX = wide ? 1128 : 328;
+  const ridges = (
+    <>
+      <path
+        d="M120,190 L170,168 L206,176 L240,154 L270,166 L300,146 L322,156 L352,138 L378,150 L400,144 L400,250 L120,250 Z"
+        fill={`url(#${id("far")})`}
+        stroke={wide ? `url(#${id("far")})` : undefined}
+        strokeWidth={wide ? 1.5 : undefined}
+        opacity={wide ? 1 : 0.9}
+      />
+      <path d="M0,206 L40,192 L80,198 L130,180 L176,196 L220,182 L262,194 L300,176 L344,190 L400,174 L400,250 L0,250 Z" fill="#2b415a" stroke={wide ? "#2b415a" : undefined} strokeWidth={wide ? 1.5 : undefined} />
+      <path d="M0,226 L50,212 L104,220 L160,206 L216,218 L270,204 L330,216 L400,202 L400,250 L0,250 Z" fill="#1d3047" stroke={wide ? "#1d3047" : undefined} strokeWidth={wide ? 1.5 : undefined} />
+    </>
+  );
+  return (
+    <svg className={className} viewBox={`0 0 ${W} 250`} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <defs>
-        <linearGradient id="hd-sky" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={id("sky")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#13304a" />
           <stop offset="0.55" stopColor="#25445f" />
           <stop offset="0.85" stopColor="#4f6377" />
         </linearGradient>
-        <radialGradient id="hd-sun" cx="0.82" cy="0.62" r="0.5">
+        <radialGradient id={id("sun")} cx={sunX / W} cy="0.62" r="0.5">
           <stop offset="0" stopColor="#ffe3b5" stopOpacity="0.9" />
           <stop offset="0.12" stopColor="#efc893" stopOpacity="0.45" />
           <stop offset="0.55" stopColor="#b79a7f" stopOpacity="0.1" />
           <stop offset="1" stopColor="#b79a7f" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="hd-far" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={id("far")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#8f9cab" />
           <stop offset="1" stopColor="#3c516a" />
         </linearGradient>
-        <linearGradient id="hd-dim" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={id("dim")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0e2a45" stopOpacity="0.15" />
           <stop offset="0.5" stopColor="#0e2a45" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect width="400" height="250" fill="url(#hd-sky)" />
-      <rect width="400" height="250" fill="url(#hd-sun)" />
-      <circle cx="328" cy="150" r="5" fill="#fff3da" />
-      <path
-        d="M120,190 L170,168 L206,176 L240,154 L270,166 L300,146 L322,156 L352,138 L378,150 L400,144 L400,250 L120,250 Z"
-        fill="url(#hd-far)"
-        opacity="0.9"
-      />
-      <path
-        d="M0,206 L40,192 L80,198 L130,180 L176,196 L220,182 L262,194 L300,176 L344,190 L400,174 L400,250 L0,250 Z"
-        fill="#2b415a"
-      />
-      <path
-        d="M0,226 L50,212 L104,220 L160,206 L216,218 L270,204 L330,216 L400,202 L400,250 L0,250 Z"
-        fill="#1d3047"
-      />
-      <path d={trees(5, 400, 236, 18, 40, 14)} fill="#15253a" />
-      <path d="M0,236 L400,236 L400,250 L0,250 Z" fill="#15253a" />
-      <rect width="400" height="250" fill="url(#hd-dim)" />
+      <rect width={W} height="250" fill={`url(#${id("sky")})`} />
+      <rect width={W} height="250" fill={`url(#${id("sun")})`} />
+      <circle cx={sunX} cy="150" r="5" fill="#fff3da" />
+      {ridges}
+      {wide && (
+        <>
+          <g transform="translate(800,0) scale(-1,1)">{ridges}</g>
+          <g transform="translate(800,0)">{ridges}</g>
+        </>
+      )}
+      <path d={trees(5, W, 236, 18, 40, 14)} fill="#15253a" />
+      <path d={`M0,236 L${W},236 L${W},250 L0,250 Z`} fill="#15253a" />
+      <rect width={W} height="250" fill={`url(#${id("dim")})`} />
     </svg>
   );
 }

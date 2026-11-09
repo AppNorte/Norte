@@ -44,7 +44,7 @@ export default function Relatorios() {
   return (
     <FinanceShell sub="Entenda para onde vai o seu dinheiro.">
       <MonthSwitch month={month} onChange={setMonth} />
-      <Card>
+      <Card className="wide">
         <CardHead title="Evolução" sub="Receitas e despesas dos últimos 6 meses. Toque num mês." />
         <MonthlyChart f={f} month={month} onSelect={setMonth} hide={hide} />
       </Card>

@@ -7,6 +7,7 @@ import { useStore } from "@/store/StoreProvider";
 import { BottomNav } from "./BottomNav";
 import { Compass } from "./Compass";
 import { PushRefresher } from "./PushRefresher";
+import { SideNav } from "./SideNav";
 
 /** Envolve as telas internas: garante onboarding feito e mostra o menu inferior. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <div className="shell">
+      <SideNav />
       <main>{children}</main>
       <PushRefresher />
       {!path.startsWith("/assistente") && (
@@ -36,6 +38,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
       )}
       <BottomNav />
-    </>
+    </div>
   );
 }

@@ -98,7 +98,7 @@ export default function Financas() {
     <FinanceShell>
       <MonthSwitch month={month} onChange={setMonth} />
 
-      <Card>
+      <Card className="wide">
         <div className="trio">
           <div>
             <small>Inicial</small>

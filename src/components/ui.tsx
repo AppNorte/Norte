@@ -119,7 +119,7 @@ export function Cta({
     </>
   );
   return (
-    <div style={{ marginTop: 4 }}>
+    <div className="cta-wrap" style={{ marginTop: 4 }}>
       {href ? (
         <Link href={href} className="cta">
           {inner}

@@ -36,7 +36,7 @@ export default function Contas() {
           <b className={totalPrev < 0 ? "neg" : ""}>{money(totalPrev, hide)}</b>
         </span>
       </div>
-      <Card>
+      <Card className="wide">
         {accounts.length === 0 && <p className="empty">Nenhuma conta. Adicione seus bancos e a carteira.</p>}
         <ul className="list">
           {accounts.map((a) => {
