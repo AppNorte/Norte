@@ -13,6 +13,8 @@ function translate(msg: string): string {
   if (/already registered|already exists/i.test(msg)) return "Este e-mail já tem conta. Use “Entrar”.";
   if (/password.*(6|short)/i.test(msg)) return "A senha precisa ter pelo menos 6 caracteres.";
   if (/rate limit/i.test(msg)) return "Muitas tentativas. Aguarde alguns minutos.";
+  if (/failed to fetch|network|load failed/i.test(msg))
+    return "Sem conexão com a nuvem. Verifique a internet (tente trocar Wi‑Fi por dados móveis) e desative bloqueadores de anúncio ou DNS privado para este app.";
   return msg;
 }
 
