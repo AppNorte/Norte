@@ -241,6 +241,25 @@ export interface Transaction {
   isAdjust?: boolean; // ajuste de saldo (não conta como receita/despesa)
   attachmentId?: string | null; // foto da nota (IndexedDB do aparelho)
   nfce?: { chave: string; url: string } | null; // NFC-e lida pelo QR Code
+  time?: string | null; // "HH:MM" do lançamento
+  subcategory?: string | null; // subcategoria (texto livre dentro da categoria)
+  splits?: TxSplit[] | null; // multicategorias: soma = amount
+  tags?: string[]; // etiquetas (#viagem, #casa…)
+  extra?: { kind: "fee" | "discount"; amount: number } | null; // encargos/desconto, já somados em amount
+  ignore?: TxIgnore; // onde este lançamento não deve contar
+}
+
+export interface TxSplit {
+  categoryId: string | null;
+  amount: number; // centavos
+}
+
+export interface TxIgnore {
+  limit?: boolean; // limite do cartão
+  stats?: boolean; // estatísticas e gráficos
+  budget?: boolean; // orçamentos
+  savings?: boolean; // economia mensal
+  totals?: boolean; // totais de receitas/despesas
 }
 
 export interface Recurring {

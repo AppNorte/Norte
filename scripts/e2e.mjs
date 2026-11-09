@@ -197,7 +197,8 @@ try {
   await page.getByRole("button", { name: "Nova compra no Nubank" }).click();
   await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("600");
   await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Tênis");
-  await page.getByRole("dialog").getByRole("combobox").selectOption("3");
+  await page.getByRole("dialog").getByRole("radio", { name: "Parcelar ou repetir" }).click();
+  await page.getByRole("dialog").getByLabel("Total de parcelas").fill("3");
   await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
   const parcels = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.filter((t) => t.installment).map((t) => [t.amount, t.invoiceMonth]));
   check("Finanças: compra em 3x no cartão", parcels.length === 3 && parcels.every((p) => p[0] === 20000) && new Set(parcels.map((p) => p[1])).size === 3);
@@ -425,6 +426,55 @@ try {
   check("Falha da IA: responde em modo local", true);
   await page.unroute("**/api/assistant");
 
+  // ---------- Lançamento: opções avançadas ----------
+  const txs = () => page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions);
+  await page.goto(`${BASE}/financas`);
+  // Compra já em andamento: parcela 3 de 5, valor da parcela, fatura seguinte
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  let dlg = page.getByRole("dialog");
+  await dlg.getByLabel("Valor", { exact: true }).fill("50");
+  await dlg.getByPlaceholder(/Mercado do mês/).fill("Curso online");
+  await dlg.getByRole("button", { name: /\(cartão\)/ }).first().click();
+  const invBefore = await dlg.locator(".invoice-pick b").textContent();
+  await dlg.getByRole("button", { name: "Próxima fatura" }).click();
+  await dlg.getByRole("radio", { name: "Parcelar ou repetir" }).click();
+  await dlg.getByLabel("Total de parcelas").fill("5");
+  await dlg.getByLabel("Começar na parcela").fill("3");
+  await dlg.getByRole("radio", { name: "Valor da parcela" }).click();
+  await dlg.getByRole("button", { name: "Salvar lançamento" }).click();
+  const curso = (await txs()).filter((t) => t.description === "Curso online");
+  check(
+    "Lançamento: começar na parcela 3 de 5 com valor da parcela",
+    curso.length === 3 && curso.every((t) => t.amount === 5000) && curso.map((t) => t.installment.n).join() === "3,4,5",
+    JSON.stringify(curso.map((t) => [t.amount, t.installment?.n])),
+  );
+  check("Lançamento: fatura escolhida manualmente", Boolean(invBefore) && curso[0].invoiceMonth > (await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.find((t) => t.description === "Tênis").invoiceMonth)));
+  // Multicategorias + etiqueta + encargos + ignorar nos totais + salvar e continuar
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  dlg = page.getByRole("dialog");
+  await dlg.getByLabel("Valor", { exact: true }).fill("100");
+  await dlg.getByPlaceholder(/Mercado do mês/).fill("Compras divididas");
+  await dlg.getByRole("switch", { name: "Multicategorias" }).click();
+  await dlg.getByLabel("Categoria 1", { exact: true }).selectOption({ index: 1 });
+  await dlg.getByLabel("Valor da categoria 1").fill("60");
+  await dlg.getByLabel("Categoria 2", { exact: true }).selectOption({ index: 2 });
+  await dlg.getByLabel("Valor da categoria 2").fill("50");
+  await dlg.getByText("Mais opções").click();
+  await dlg.getByLabel("Valor de encargos ou desconto").fill("10");
+  await dlg.getByLabel("Nova etiqueta").fill("viagem");
+  await dlg.getByLabel("Nova etiqueta").press("Enter");
+  await dlg.getByRole("switch", { name: "Ignorar nos totais" }).click();
+  await dlg.getByRole("switch", { name: "Salvar e continuar" }).click();
+  await dlg.getByRole("button", { name: "Salvar lançamento" }).click();
+  const div = (await txs()).find((t) => t.description === "Compras divididas");
+  check(
+    "Lançamento: multicategorias + encargos + etiqueta + ignorar nos totais",
+    div && div.amount === 11000 && div.splits?.length === 2 && div.splits[0].amount + div.splits[1].amount === 11000 && div.extra?.kind === "fee" && div.tags?.includes("viagem") && div.ignore?.totals === true,
+    JSON.stringify(div),
+  );
+  check("Lançamento: salvar e continuar mantém a janela aberta", (await page.getByRole("dialog").isVisible()) && (await page.getByRole("dialog").getByLabel("Valor", { exact: true }).inputValue()) === "");
+  await page.keyboard.press("Escape");
+
   // ---------- Avisos e Google Agenda ----------
   await page.goto(`${BASE}/financas`);
   await page.getByRole("button", { name: "Novo lançamento" }).click();
@@ -432,7 +482,7 @@ try {
   await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Conta de luz");
   await page.getByRole("dialog").locator('input[type=date][aria-label="Data"]').fill("2026-09-13");
   await page.getByRole("dialog").getByRole("switch", { name: "Pago" }).click();
-  await page.getByRole("dialog").getByRole("switch", { name: "Repetir todo mês" }).click();
+  await page.getByRole("dialog").getByRole("radio", { name: "Fixa mensal" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
   await page.goto(`${BASE}/mais`);
   await page.getByRole("link", { name: /Avisos/ }).click();

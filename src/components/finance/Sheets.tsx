@@ -53,8 +53,9 @@ export function TxRow({ t, onOpen, hide }: { t: Transaction; onOpen: () => void;
           {(t.attachmentId || t.nfce) && <Paperclip size={13} className="clip" aria-label="Com nota fiscal" />}
         </span>
         <small>
-          {cat?.name ? `${cat.name} · ` : ""}
+          {t.splits?.length ? `${t.splits.length} categorias · ` : cat?.name ? `${cat.name}${t.subcategory ? ` › ${t.subcategory}` : ""} · ` : ""}
           {where}
+          {t.tags?.length ? ` · ${t.tags.map((x) => `#${x}`).join(" ")}` : ""}
           {!t.paid && <b className={`tag ${t.kind === "income" ? "tag-in" : "tag-out"}`}>{t.kind === "income" ? "a receber" : "a pagar"}</b>}
         </small>
       </span>

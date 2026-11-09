@@ -48,10 +48,11 @@ export default function Transacoes() {
       if (k === "acc" && t.accountId !== id && t.toAccountId !== id) return false;
       if (k === "card" && t.cardId !== id) return false;
     }
-    if (cat !== "all" && t.categoryId !== cat) return false;
+    if (cat !== "all" && t.categoryId !== cat && !t.splits?.some((x) => x.categoryId === cat)) return false;
     if (q.trim()) {
-      const c = f.categories.find((x) => x.id === t.categoryId)?.name ?? "";
-      if (!norm(`${t.description} ${c} ${t.notes}`).includes(norm(q))) return false;
+      const c = [t.categoryId, ...(t.splits ?? []).map((x) => x.categoryId)].map((id) => f.categories.find((x) => x.id === id)?.name ?? "").join(" ");
+      const tags = (t.tags ?? []).map((x) => `#${x}`).join(" ");
+      if (!norm(`${t.description} ${c} ${t.subcategory ?? ""} ${tags} ${t.notes}`).includes(norm(q))) return false;
     }
     return true;
   });

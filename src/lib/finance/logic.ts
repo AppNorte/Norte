@@ -1,7 +1,7 @@
 // Regras financeiras puras. Valores SEMPRE em centavos (inteiros).
-import type { AppState, CreditCard, FinAccount, FinanceState, Recurring, Transaction, TxKind } from "@/lib/types";
+import type { AppState, CreditCard, FinAccount, FinanceState, Recurring, Transaction, TxIgnore, TxKind, TxSplit } from "@/lib/types";
 import { uid } from "@/lib/id";
-import { pad, toDateKey } from "@/lib/dates";
+import { addDays, pad, toDateKey } from "@/lib/dates";
 
 // ---------- Dinheiro ----------
 
@@ -110,7 +110,7 @@ export function invoice(f: FinanceState, card: CreditCard, month: string, today 
 
 /** Limite usado = compras ainda não pagas (todas as faturas). */
 export function cardUsed(f: FinanceState, card: CreditCard): number {
-  const spent = f.transactions.filter((t) => t.cardId === card.id && t.kind === "expense").reduce((s, t) => s + t.amount, 0);
+  const spent = f.transactions.filter((t) => t.cardId === card.id && t.kind === "expense" && !t.ignore?.limit).reduce((s, t) => s + t.amount, 0);
   const paid = f.transactions.filter((t) => t.cardId === card.id && t.kind === "card_payment" && t.paid).reduce((s, t) => s + t.amount, 0);
   return Math.max(0, spent - paid);
 }
@@ -121,6 +121,20 @@ export function currentInvoiceMonth(f: FinanceState, card: CreditCard, today = t
   const prev = addMonths(base, -1);
   const inv = invoice(f, card, prev, today);
   return inv.status === "closed" ? prev : base;
+}
+
+// ---------- Onde cada lançamento conta ----------
+
+export type Purpose = "stats" | "budget" | "savings" | "totals";
+
+/** Ajustes de saldo nunca contam; o usuário pode tirar um lançamento de cada cálculo ("Ignorar em…"). */
+export function counts(t: Transaction, purpose: Purpose): boolean {
+  return !t.isAdjust && !t.ignore?.[purpose];
+}
+
+/** Valor por categoria (respeita multicategorias). */
+export function categoryParts(t: Transaction): { categoryId: string | null; amount: number }[] {
+  return t.splits?.length ? t.splits : [{ categoryId: t.categoryId, amount: t.amount }];
 }
 
 // ---------- Saldos ----------
@@ -150,14 +164,16 @@ export function totalBalance(f: FinanceState, upTo?: string): number {
 }
 
 export function monthTransactions(f: FinanceState, month: string): Transaction[] {
-  return f.transactions.filter((t) => monthOf(t.date) === month).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+  return f.transactions
+    .filter((t) => monthOf(t.date) === month)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.time ?? "").localeCompare(a.time ?? "") || b.createdAt.localeCompare(a.createdAt));
 }
 
 export function monthSummary(f: FinanceState, month: string, today = toDateKey()) {
   const txs = monthTransactions(f, month).filter((t) => !t.isAdjust);
-  const income = txs.filter((t) => t.kind === "income").reduce((s, t) => s + t.amount, 0);
+  const income = txs.filter((t) => t.kind === "income" && counts(t, "totals")).reduce((s, t) => s + t.amount, 0);
   const incomePending = txs.filter((t) => t.kind === "income" && !t.paid).reduce((s, t) => s + t.amount, 0);
-  const expense = txs.filter((t) => t.kind === "expense").reduce((s, t) => s + t.amount, 0);
+  const expense = txs.filter((t) => t.kind === "expense" && counts(t, "totals")).reduce((s, t) => s + t.amount, 0);
   const expensePending = txs.filter((t) => t.kind === "expense" && !t.cardId && !t.paid).reduce((s, t) => s + t.amount, 0);
   const invoicesDue = f.cards
     .filter((c) => !c.archived)
@@ -168,11 +184,11 @@ export function monthSummary(f: FinanceState, month: string, today = toDateKey()
   return { income, incomePending, expense, expensePending, invoicesDue, result: income - expense, balance, forecast };
 }
 
-export function spendByCategory(f: FinanceState, month: string) {
+export function spendByCategory(f: FinanceState, month: string, purpose: Purpose = "stats") {
   const map = new Map<string | null, number>();
   for (const t of monthTransactions(f, month)) {
-    if (t.kind !== "expense" || t.isAdjust) continue;
-    map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount);
+    if (t.kind !== "expense" || !counts(t, purpose)) continue;
+    for (const p of categoryParts(t)) map.set(p.categoryId, (map.get(p.categoryId) ?? 0) + p.amount);
   }
   return map;
 }
@@ -214,6 +230,39 @@ export interface TxInput {
   notes?: string;
   attachmentId?: string | null;
   nfce?: { chave: string; url: string } | null;
+  // Parcelar ou repetir
+  startInstallment?: number; // começar na parcela N (compra já em andamento)
+  frequency?: Frequency;
+  perInstallment?: boolean; // true = o valor informado é de cada parcela (repetir); false = valor total (dividir)
+  invoiceMonth?: string | null; // fatura escolhida (compras no cartão)
+  time?: string | null;
+  subcategory?: string | null;
+  splits?: TxSplit[] | null;
+  tags?: string[];
+  extra?: Transaction["extra"];
+  ignore?: TxIgnore;
+}
+
+export type Frequency = "monthly" | "weekly" | "biweekly" | "yearly";
+
+export const FREQUENCY_LABEL: Record<Frequency, string> = { monthly: "Mensal", weekly: "Semanal", biweekly: "Quinzenal", yearly: "Anual" };
+
+/** Data da k-ésima ocorrência a partir de `date`. */
+export function occurrenceDate(date: string, k: number, freq: Frequency = "monthly"): string {
+  if (freq === "weekly") return addDays(date, 7 * k);
+  if (freq === "biweekly") return addDays(date, 14 * k);
+  return shiftDate(date, freq === "yearly" ? 12 * k : k);
+}
+
+function scaleSplits(splits: TxSplit[] | null | undefined, total: number, amount: number): TxSplit[] | null {
+  if (!splits?.length) return null;
+  if (total === amount) return splits.map((x) => ({ ...x }));
+  let used = 0;
+  return splits.map((x, i) => {
+    const v = i === splits.length - 1 ? amount - used : Math.round((x.amount * amount) / total);
+    used += v;
+    return { categoryId: x.categoryId, amount: v };
+  });
 }
 
 function baseTx(i: TxInput): Transaction {
@@ -235,6 +284,12 @@ function baseTx(i: TxInput): Transaction {
     createdAt: new Date().toISOString(),
     attachmentId: i.attachmentId ?? null,
     nfce: i.nfce ?? null,
+    time: i.time ?? null,
+    subcategory: i.subcategory?.trim() || null,
+    splits: i.kind === "transfer" ? null : (i.splits?.length ? i.splits.map((x) => ({ ...x })) : null),
+    tags: i.tags?.length ? [...new Set(i.tags)] : undefined,
+    extra: i.extra ?? null,
+    ignore: i.ignore && Object.values(i.ignore).some(Boolean) ? { ...i.ignore } : undefined,
   };
 }
 
@@ -275,28 +330,33 @@ export function addTransaction(s: AppState, i: TxInput) {
   if (n === 1) {
     const t = baseTx(i);
     if (card) {
-      t.invoiceMonth = invoiceMonthFor(card, t.date);
+      t.invoiceMonth = i.invoiceMonth || invoiceMonthFor(card, t.date);
       t.paid = true; // compra no cartão: quem é paga é a fatura
     }
     f.transactions.push(t);
     return;
   }
 
-  // Parcelado: divide em centavos, sobra vai para a 1ª parcela
+  // Parcelado/repetido. Valor total: divide em centavos (sobra na 1ª parcela). Valor da parcela: repete o valor.
+  const freq = i.frequency ?? "monthly";
+  const start = Math.max(1, Math.min(n, Math.floor(i.startInstallment ?? 1)));
   const groupId = uid();
-  const part = Math.floor(i.amount / n);
-  const rest = i.amount - part * n;
-  const firstInvoice = card ? invoiceMonthFor(card, i.date) : null;
-  for (let k = 0; k < n; k++) {
-    const t = baseTx({ ...i, amount: part + (k === 0 ? rest : 0) });
-    t.installment = { groupId, n: k + 1, total: n };
+  const part = i.perInstallment ? i.amount : Math.floor(i.amount / n);
+  const rest = i.perInstallment ? 0 : i.amount - part * n;
+  const firstInvoice = card ? i.invoiceMonth || invoiceMonthFor(card, i.date) : null;
+  const totalForSplits = i.splits?.reduce((a, x) => a + x.amount, 0) ?? 0;
+  for (let p = start; p <= n; p++) {
+    const k = p - start; // ocorrência a partir da data informada
+    const amount = part + (p === 1 ? rest : 0);
+    const t = baseTx({ ...i, amount });
+    t.splits = scaleSplits(i.splits, totalForSplits, amount);
+    t.installment = { groupId, n: p, total: n };
+    t.date = occurrenceDate(i.date, k, freq);
     if (card) {
-      // Cada parcela conta no seu mês (como nos apps de finanças) e cai na fatura seguinte.
-      t.date = shiftDate(i.date, k);
-      t.invoiceMonth = addMonths(firstInvoice!, k);
+      // Cada parcela conta no seu mês e cai na fatura seguinte.
+      t.invoiceMonth = freq === "monthly" ? addMonths(firstInvoice!, k) : k === 0 ? firstInvoice : invoiceMonthFor(card, t.date);
       t.paid = true;
     } else {
-      t.date = shiftDate(i.date, k);
       t.paid = k === 0 ? i.paid : false;
     }
     f.transactions.push(t);
@@ -307,7 +367,7 @@ export function updateTransaction(s: AppState, id: string, patch: Partial<Transa
   const t = s.finance.transactions.find((x) => x.id === id);
   if (!t) return;
   Object.assign(t, patch);
-  if (t.cardId && t.kind === "expense") {
+  if (t.cardId && t.kind === "expense" && !patch.invoiceMonth) {
     const card = s.finance.cards.find((c) => c.id === t.cardId);
     if (card && !t.installment) t.invoiceMonth = invoiceMonthFor(card, t.date);
   }
@@ -497,9 +557,11 @@ export function dailyBalances(f: FinanceState, month: string, today = toDateKey(
 }
 
 export function savingsRate(f: FinanceState, month: string) {
-  const s = monthSummary(f, month);
-  const saved = s.income - s.expense;
-  return { income: s.income, expense: s.expense, saved, pct: s.income > 0 ? Math.round((saved / s.income) * 100) : null };
+  const txs = monthTransactions(f, month).filter((t) => counts(t, "savings") && counts(t, "totals"));
+  const income = txs.filter((t) => t.kind === "income").reduce((a, t) => a + t.amount, 0);
+  const expense = txs.filter((t) => t.kind === "expense").reduce((a, t) => a + t.amount, 0);
+  const saved = income - expense;
+  return { income, expense, saved, pct: income > 0 ? Math.round((saved / income) * 100) : null };
 }
 
 /** Total das faturas do mês (todos os cartões) e limite disponível somado. */
@@ -557,19 +619,21 @@ export function transactionsCsv(f: FinanceState): string {
   const card = (id: string | null) => f.cards.find((c) => c.id === id)?.name ?? "";
   const kindLabel: Record<string, string> = { income: "Receita", expense: "Despesa", transfer: "Transferência", card_payment: "Pagamento de fatura" };
   const esc = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-  const head = ["Data", "Tipo", "Descrição", "Categoria", "Conta", "Cartão", "Valor", "Pago", "Parcela"];
+  const head = ["Data", "Tipo", "Descrição", "Categoria", "Subcategoria", "Conta", "Cartão", "Valor", "Pago", "Parcela", "Etiquetas"];
   const rows = [...f.transactions]
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((t) => [
       t.date.split("-").reverse().join("/"),
       kindLabel[t.kind] ?? t.kind,
       t.description,
-      cat(t.categoryId),
+      t.splits?.length ? t.splits.map((x) => `${cat(x.categoryId) || "Sem categoria"} ${(x.amount / 100).toFixed(2).replace(".", ",")}`).join(" + ") : cat(t.categoryId),
+      t.subcategory ?? "",
       acc(t.accountId),
       card(t.cardId),
       ((t.kind === "expense" || t.kind === "card_payment" ? -1 : 1) * t.amount / 100).toFixed(2).replace(".", ","),
       t.paid ? "Sim" : "Não",
       t.installment ? `${t.installment.n}/${t.installment.total}` : "",
+      (t.tags ?? []).map((x) => `#${x}`).join(" "),
     ]);
   return [head, ...rows].map((r) => r.map((c) => esc(String(c))).join(";")).join("\r\n");
 }

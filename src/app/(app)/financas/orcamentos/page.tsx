@@ -14,7 +14,7 @@ export default function Orcamentos() {
   const hide = f.hideValues;
   const [month, setMonth] = useFinMonth();
   const [edit, setEdit] = useState(false);
-  const spend = spendByCategory(f, month);
+  const spend = spendByCategory(f, month, "budget");
   const withBudget = f.categories.filter((c) => c.kind === "expense" && c.budget);
   const without = f.categories.filter((c) => c.kind === "expense" && !c.budget && (spend.get(c.id) ?? 0) > 0);
   const totalBudget = withBudget.reduce((a, c) => a + (c.budget ?? 0), 0);

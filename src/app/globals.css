@@ -4359,3 +4359,143 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     margin: 0 auto;
   }
 }
+
+/* =================== LANÇAMENTO: opções avançadas =================== */
+.seg-btn[aria-checked="true"] {
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(19, 44, 73, 0.12);
+}
+
+.seg-3 .seg-btn {
+  font-size: 13.5px;
+  line-height: 1.15;
+  padding: 4px 6px;
+}
+
+.seg-3 {
+  margin-bottom: 8px;
+}
+
+.rep-box,
+.split-box {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.rep-box .field {
+  margin-bottom: 0;
+}
+
+.rep-sum {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.split-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.split-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.invoice-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.invoice-pick > span {
+  flex: 1;
+  font-weight: 600;
+}
+
+.invoice-pick b {
+  min-width: 132px;
+  text-align: center;
+}
+
+.note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--blue-soft);
+  color: var(--blue-ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+
+details.more {
+  margin: 4px 0 14px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 0 14px;
+}
+
+details.more > summary {
+  cursor: pointer;
+  list-style: none;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+details.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.more > summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--text-2);
+  border-bottom: 2px solid var(--text-2);
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform 0.15s;
+}
+
+details.more[open] > summary::after {
+  transform: rotate(-135deg) translateY(-3px);
+}
+
+details.more[open] {
+  padding-bottom: 6px;
+}

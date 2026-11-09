@@ -1,6 +1,6 @@
 "use client";
 
-import { addMonths, money, monthLabel, monthTransactions, shortMonth } from "@/lib/finance/logic";
+import { addMonths, counts, money, monthLabel, monthTransactions, shortMonth } from "@/lib/finance/logic";
 import type { FinanceState } from "@/lib/types";
 
 // Paleta validada (scripts/validate_palette do guia de gráficos): passa em daltonismo e contraste.
@@ -34,8 +34,8 @@ export function MonthlyChart({ f, month, onSelect, hide }: { f: FinanceState; mo
     const txs = monthTransactions(f, m);
     return {
       m,
-      income: txs.filter((t) => t.kind === "income").reduce((a, t) => a + t.amount, 0),
-      expense: txs.filter((t) => t.kind === "expense").reduce((a, t) => a + t.amount, 0),
+      income: txs.filter((t) => t.kind === "income" && counts(t, "stats")).reduce((a, t) => a + t.amount, 0),
+      expense: txs.filter((t) => t.kind === "expense" && counts(t, "stats")).reduce((a, t) => a + t.amount, 0),
     };
   });
   const max = niceMax(Math.max(...data.map((d) => Math.max(d.income, d.expense))));
