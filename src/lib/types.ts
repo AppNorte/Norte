@@ -192,6 +192,8 @@ export interface FinAccount {
   initialBalance: number; // centavos
   color: string;
   archived: boolean;
+  bank?: string | null; // chave em BANKS (cor e sigla)
+  includeInTotal?: boolean; // false = não soma no saldo geral (ex.: conta de outra pessoa)
 }
 
 export interface CreditCard {
@@ -202,6 +204,9 @@ export interface CreditCard {
   dueDay: number; // dia de vencimento
   color: string;
   archived: boolean;
+  bank?: string | null;
+  brand?: string | null; // visa, mastercard, elo…
+  payAccountId?: string | null; // conta que paga a fatura
 }
 
 export type CategoryKind = "expense" | "income";
@@ -233,6 +238,7 @@ export interface Transaction {
   recurringId: string | null;
   notes: string;
   createdAt: string;
+  isAdjust?: boolean; // ajuste de saldo (não conta como receita/despesa)
   attachmentId?: string | null; // foto da nota (IndexedDB do aparelho)
   nfce?: { chave: string; url: string } | null; // NFC-e lida pelo QR Code
 }
@@ -250,7 +256,20 @@ export interface Recurring {
   active: boolean;
 }
 
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  target: number; // centavos
+  icon: string;
+  color: string;
+  deadline: string | null;
+  entries: { id: string; date: string; amount: number; note: string }[]; // + depósito / - retirada
+  archived: boolean;
+  createdAt: string;
+}
+
 export interface FinanceState {
+  goals: SavingsGoal[];
   accounts: FinAccount[];
   cards: CreditCard[];
   categories: FinCategory[];

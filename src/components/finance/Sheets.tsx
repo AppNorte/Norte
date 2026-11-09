@@ -5,6 +5,8 @@ import { Paperclip, Pencil, Plus, Search } from "lucide-react";
 import { Bar, Field, Modal, useToast } from "@/components/ui";
 import { ACCOUNT_TYPE_LABEL, AccountIcon, CATEGORY_ICONS, CatDot, FinIcon } from "./FinIcon";
 import { ACCOUNT_COLORS } from "@/lib/finance/defaults";
+import { CARD_BRANDS, bankOf } from "@/lib/finance/banks";
+import { BankPicker } from "./Shell";
 import {
   accountBalance,
   cardUsed,
@@ -249,19 +251,55 @@ function CardFormInner({ card, onClose }: { card?: CreditCard; onClose: () => vo
   const [due, setDue] = useState(card?.dueDay ?? 10);
   const [color, setColor] = useState(card?.color ?? "#8a05be");
   const [confirm, setConfirm] = useState(false);
+  const [bank, setBank] = useState<string | null>(card?.bank ?? null);
+  const [brand, setBrand] = useState<string>(card?.brand ?? "mastercard");
+  const { s } = useAppState();
+  const [payAcc, setPayAcc] = useState<string>(card?.payAccountId ?? "");
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        mutate((d) => saveCard(d, { id: card?.id, name: name.trim(), limit: parseMoney(limit) ?? 0, closingDay: closing, dueDay: due, color }));
+        mutate((d) =>
+          saveCard(d, { id: card?.id, name: name.trim(), limit: parseMoney(limit) ?? 0, closingDay: closing, dueDay: due, color: bankOf(bank)?.bg ?? color, bank, brand, payAccountId: payAcc || null }),
+        );
         toast("Cartão salvo.");
         onClose();
       }}
     >
-      <Field label="Nome do cartão">
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Nubank, Inter" required />
+      <Field label="Banco do cartão" group>
+        <BankPicker
+          value={bank}
+          onChange={(k) => {
+            setBank(k);
+            if (!name.trim()) setName(bankOf(k)?.name ?? "");
+          }}
+        />
       </Field>
+      <Field label="Nome do cartão">
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Nubank, Cartão mãe de Bia" required />
+      </Field>
+      <div className="grid-2">
+        <Field label="Bandeira">
+          <select className="select" value={brand} onChange={(e) => setBrand(e.target.value)}>
+            {CARD_BRANDS.map((b) => (
+              <option key={b.key} value={b.key}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Conta que paga a fatura">
+          <select className="select" value={payAcc} onChange={(e) => setPayAcc(e.target.value)}>
+            <option value="">A definir</option>
+            {s.finance.accounts.filter((a) => !a.archived).map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
       <Field label="Limite">
         <input className="input" inputMode="decimal" placeholder="0,00" value={limit} onChange={(e) => setLimit(e.target.value)} />
       </Field>
@@ -273,9 +311,11 @@ function CardFormInner({ card, onClose }: { card?: CreditCard; onClose: () => vo
           <input className="input" type="number" min={1} max={31} value={due} onChange={(e) => setDue(Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />
         </Field>
       </div>
-      <Field label="Cor" group>
-        <ColorPick value={color} onChange={setColor} />
-      </Field>
+      {!bank && (
+        <Field label="Cor" group>
+          <ColorPick value={color} onChange={setColor} />
+        </Field>
+      )}
       <button type="submit" className="btn primary block">
         Salvar cartão
       </button>
@@ -324,7 +364,7 @@ export function InvoiceSheet({
   const toast = useToast();
   const [paying, setPaying] = useState(false);
   const [payAmount, setPayAmount] = useState("");
-  const [payAcc, setPayAcc] = useState(s.finance.accounts.find((a) => !a.archived)?.id ?? "");
+  const [payAcc, setPayAcc] = useState(card?.payAccountId ?? s.finance.accounts.find((a) => !a.archived)?.id ?? "");
   if (!card) return null;
   const f = s.finance;
   const inv = invoice(f, card, month);

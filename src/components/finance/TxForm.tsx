@@ -20,17 +20,31 @@ import { callApi, serverAvailable } from "@/lib/api";
 
 type Kind = Exclude<TxKind, "card_payment">;
 
-export function TxForm({ open, onClose, editId, initialKind = "expense", scan = false }: { open: boolean; onClose: () => void; editId?: string | null; initialKind?: Kind; scan?: boolean }) {
+export function TxForm({
+  open,
+  onClose,
+  editId,
+  initialKind = "expense",
+  scan = false,
+  cardId = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editId?: string | null;
+  initialKind?: Kind;
+  scan?: boolean;
+  cardId?: string | null;
+}) {
   const { s } = useAppState();
   const editing = editId ? s.finance.transactions.find((t) => t.id === editId) : undefined;
   return (
     <Modal open={open} onClose={onClose} title={editing ? "Editar lançamento" : "Novo lançamento"}>
-      {open && <Form key={`${editId ?? "new"}-${scan}`} onClose={onClose} editing={editing} initialKind={initialKind} scan={scan} />}
+      {open && <Form key={`${editId ?? "new"}-${scan}-${cardId}`} onClose={onClose} editing={editing} initialKind={initialKind} scan={scan} cardId={cardId} />}
     </Modal>
   );
 }
 
-function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; editing?: Transaction; initialKind: Kind; scan: boolean }) {
+function Form({ onClose, editing, initialKind, scan, cardId }: { onClose: () => void; editing?: Transaction; initialKind: Kind; scan: boolean; cardId: string | null }) {
   const { s, mutate } = useAppState();
   const toast = useToast();
   const f = s.finance;
@@ -44,7 +58,7 @@ function Form({ onClose, editing, initialKind, scan }: { onClose: () => void; ed
   const [categoryId, setCategoryId] = useState<string | null>(editing?.categoryId ?? null);
   // "acc:<id>" ou "card:<id>"
   const [source, setSource] = useState<string>(
-    editing?.cardId ? `card:${editing.cardId}` : `acc:${editing?.accountId ?? accounts[0]?.id ?? ""}`,
+    editing?.cardId ? `card:${editing.cardId}` : cardId ? `card:${cardId}` : `acc:${editing?.accountId ?? accounts[0]?.id ?? ""}`,
   );
   const [toAccount, setToAccount] = useState<string>(editing?.toAccountId ?? accounts[1]?.id ?? accounts[0]?.id ?? "");
   const [date, setDate] = useState(editing?.date ?? today);

@@ -34,6 +34,7 @@ export function defaultCategories(): FinCategory[] {
 
 export function defaultFinance(): FinanceState {
   return {
+    goals: [],
     accounts: [{ id: uid(), name: "Conta principal", type: "checking", initialBalance: 0, color: "#2e6b57", archived: false }],
     cards: [],
     categories: defaultCategories(),

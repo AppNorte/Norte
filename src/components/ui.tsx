@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check as CheckIcon, ChevronRight, X } from "lucide-react";
 import { Compass } from "./Compass";
 
@@ -169,7 +170,8 @@ export function Modal({
   }, [open]);
 
   if (!open) return null;
-  return (
+  // Portal no <body>: a janela fica acima do menu e do botão flutuante, onde quer que seja aberta.
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={panel} tabIndex={-1}>
         <div className="modal-handle" />
@@ -183,7 +185,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

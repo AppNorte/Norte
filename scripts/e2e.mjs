@@ -164,62 +164,101 @@ try {
 
 
   // ---------- Finanças ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Finanças" }).click();
-  await page.getByText("Saldo em contas").first().waitFor();
-  // Saldo inicial da conta principal
-  await page.getByRole("button", { name: "Gerenciar" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: /Conta principal/ }).click();
+  const finTab = (name) => page.getByRole("navigation", { name: "Seções de Finanças" }).getByRole("link", { name, exact: true }).click();
+  await page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link", { name: "Finanças" }).click();
+  await page.locator(".trio").waitFor();
+  // Contas: saldo inicial da conta principal
+  await finTab("Contas");
+  await page.locator(".acc-main", { hasText: "Conta principal" }).click();
   await page.getByRole("dialog").getByLabel(/Saldo inicial/).fill("1.000,00");
   await page.getByRole("dialog").getByRole("button", { name: "Salvar conta" }).click();
-  await page.getByRole("button", { name: "Fechar" }).click();
-  check("Finanças: saldo da conta", await page.locator(".balance").getByText("R$ 1.000,00").isVisible());
+  check("Finanças: saldo da conta", await page.locator(".acc-vals").getByText("R$ 1.000,00").isVisible());
+  await finTab("Resumo");
   // Despesa à vista
   await page.getByRole("button", { name: "Novo lançamento" }).click();
   await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("150,50");
   await page.getByRole("dialog").getByRole("button", { name: /Mercado/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
-  check("Finanças: despesa reduz o saldo", await page.locator(".balance").getByText("R$ 849,50").isVisible());
+  check("Finanças: despesa reduz o saldo", await page.locator(".trio-main").getByText("R$ 849,50").isVisible());
   // Receita a receber
   await page.getByRole("button", { name: "Novo lançamento" }).click();
   await page.getByRole("tab", { name: "Receita" }).click();
   await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("3000");
   await page.getByRole("dialog").getByRole("switch", { name: "Pago" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
-  check("Finanças: receita pendente entra no previsto", await page.locator(".forecast").getByText("R$ 3.849,50").isVisible());
+  check("Finanças: receita pendente entra no previsto", await page.locator(".trio").getByText("R$ 3.849,50").isVisible());
+  check("Finanças: gráfico do saldo dia a dia", await page.getByRole("img", { name: "Saldo dia a dia do mês" }).isVisible());
   // Cartão + compra parcelada
-  await page.getByRole("button", { name: "Adicionar" }).first().click();
-  await page.getByRole("dialog").getByLabel("Nome do cartão").fill("Nubank");
+  await finTab("Cartões");
+  await page.getByRole("button", { name: /Adicionar cartão/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Nubank" }).click();
   await page.getByRole("dialog").getByLabel("Limite").fill("2000");
   await page.getByRole("dialog").getByRole("button", { name: "Salvar cartão" }).click();
-  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("button", { name: "Nova compra no Nubank" }).click();
   await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("600");
   await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Tênis");
-  await page.getByRole("dialog").getByRole("button", { name: /Nubank \(cartão\)/ }).click();
   await page.getByRole("dialog").getByRole("combobox").selectOption("3");
   await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
   const parcels = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.filter((t) => t.installment).map((t) => [t.amount, t.invoiceMonth]));
   check("Finanças: compra em 3x no cartão", parcels.length === 3 && parcels.every((p) => p[0] === 20000) && new Set(parcels.map((p) => p[1])).size === 3);
-  check("Finanças: parcela conta no mês certo", await page.locator(".io.out").getByText("R$ 350,50").isVisible());
-  check("Finanças: compra no cartão não mexe no saldo", await page.locator(".balance").getByText("R$ 849,50").isVisible());
-  await page.locator(".card-row").first().click();
+  check("Finanças: limite disponível", await page.locator(".cc").getByText("R$ 1.400,00").isVisible());
+  check("Finanças: selo do banco e bandeira", (await page.locator(".cc .bank-badge").first().textContent()) === "nu");
+  await page.getByRole("button", { name: "Ver fatura do Nubank" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Próxima fatura" }).click();
   check("Finanças: fatura mostra a parcela", await page.getByRole("dialog").getByText(/Tênis/).first().isVisible());
   await page.getByRole("button", { name: "Fechar" }).click();
-  check("Finanças: limite disponível", await page.getByText("Disponível R$ 1.400,00").isVisible());
+  await page.getByRole("button", { name: "Mês anterior" }).click(); // a fatura levou o mês para outubro
+  await finTab("Resumo");
+  check("Finanças: parcela conta no mês certo", (await page.locator(".ov", { hasText: "Despesas" }).locator("b").textContent())?.includes("350,50"));
+  check("Finanças: compra no cartão não mexe no saldo", (await page.locator(".trio-main b").textContent())?.includes("849,50"));
+  check("Finanças: economia mensal", (await page.getByText("de economia").count()) === 1);
 
   // Importar extrato OFX
-  await page.getByRole("button", { name: /Importar extrato do banco/ }).click();
+  await page.getByRole("button", { name: "Extrato", exact: true }).click();
   await page.getByRole("dialog").getByLabel("Arquivo do extrato").setInputFiles(path.resolve("scripts/fixtures/extrato-exemplo.ofx"));
   await page.getByRole("dialog").getByText("SUPERMERCADO BOM PRECO").waitFor();
   check("Finanças: extrato OFX lido com categoria automática", await page.getByRole("dialog").getByText(/Mercado/).first().isVisible());
   await page.getByRole("dialog").getByRole("button", { name: /^Importar 3/ }).click();
   const imp = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).finance.transactions.filter((t) => t.notes.startsWith("[import:")).length);
   check("Finanças: importa 3 lançamentos", imp === 3);
-  await page.getByRole("button", { name: /Importar extrato do banco/ }).click();
+  await page.getByRole("button", { name: "Extrato", exact: true }).click();
   await page.getByRole("dialog").getByLabel("Arquivo do extrato").setInputFiles(path.resolve("scripts/fixtures/extrato-exemplo.ofx"));
   await page.getByRole("dialog").getByText(/3 já existem/).waitFor();
   check("Finanças: não duplica ao importar de novo", true);
   await page.getByRole("button", { name: "Fechar" }).click();
 
+  // Abas novas
+  await finTab("Transações");
+  await page.getByRole("button", { name: "Despesas", exact: true }).click();
+  check("Transações: filtro de despesas", (await page.getByText("Tênis").count()) > 0 && (await page.getByText("PAGAMENTO DE SALARIO").count()) === 0);
+  await finTab("Orçamentos");
+  await page.getByRole("heading", { name: "Orçamento do mês" }).waitFor();
+  check("Orçamentos: tela abre", true);
+  await finTab("Objetivos");
+  await page.getByRole("button", { name: /Criar o primeiro objetivo/ }).click();
+  await page.getByRole("dialog").getByLabel("Nome").fill("Reserva de emergência");
+  await page.getByRole("dialog").getByLabel("Valor do objetivo").fill("1000");
+  await page.getByRole("dialog").getByLabel(/Já tenho guardado/).fill("100");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar objetivo" }).click();
+  await page.getByRole("button", { name: /Guardar/ }).first().click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("150");
+  await page.getByRole("dialog").getByRole("button", { name: "Guardar", exact: true }).click();
+  check("Objetivos: guardar dinheiro", await page.getByText("25%").isVisible());
+  await finTab("Calendário");
+  await page.locator(".cal-d").first().waitFor();
+  check("Calendário: dias do mês", (await page.locator(".cal-d").count()) === 30, String(await page.locator(".cal-d").count()));
+  await finTab("Relatórios");
+  const [csv] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: /Exportar todos os lançamentos/ }).click()]);
+  const csvText = fs.readFileSync(await csv.path(), "utf8");
+  check("Relatórios: exporta planilha", csvText.includes("Data;Tipo;Descrição") && csvText.includes("Tênis"));
+  // Ajuste de saldo não vira receita
+  await finTab("Contas");
+  await page.getByRole("button", { name: "Ajustar saldo de Conta principal" }).click();
+  await page.getByRole("dialog").getByLabel("Saldo real no banco").fill("5.000,00");
+  await page.getByRole("dialog").getByRole("button", { name: "Ajustar" }).click();
+  check("Contas: ajuste de saldo", await page.locator(".acc-vals").getByText("R$ 5.000,00").first().isVisible());
+  await finTab("Resumo");
+  check("Contas: ajuste não conta como receita", (await page.locator(".ov", { hasText: "Receitas" }).locator("b").textContent())?.includes("3.500,00"), await page.locator(".ov", { hasText: "Receitas" }).locator("b").textContent());
 
   // Atalho "Escanear nota" abre a câmera direto
   await page.getByRole("button", { name: "Escanear nota" }).click();
@@ -250,7 +289,7 @@ try {
   check("Nota fiscal: lançamento com chave, data e foto guardada", !!nf && nf.amount === 8990 && nf.date === "2026-09-05" && nf.chave === 44 && nf.photo > 0, JSON.stringify(nf));
   // Esconder valores
   await page.getByRole("button", { name: "Esconder valores" }).click();
-  check("Finanças: esconder valores", await page.locator(".balance").getByText("R$ •••••").isVisible());
+  check("Finanças: esconder valores", await page.locator(".trio-main").getByText("R$ •••••").isVisible());
   await page.getByRole("button", { name: "Mostrar valores" }).click();
   check("Sem rolagem horizontal (390px) em Finanças", await noHorizontalScroll(page));
   await shot(page, "09-financas");
@@ -389,7 +428,7 @@ try {
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/financas", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil"]) {
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

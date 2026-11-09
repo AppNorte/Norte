@@ -141,8 +141,12 @@ export function accountBalance(f: FinanceState, acc: FinAccount, upTo?: string):
   return b;
 }
 
-export function totalBalance(f: FinanceState): number {
-  return f.accounts.filter((a) => !a.archived).reduce((s, a) => s + accountBalance(f, a), 0);
+export function includedAccounts(f: FinanceState) {
+  return f.accounts.filter((a) => !a.archived && a.includeInTotal !== false);
+}
+
+export function totalBalance(f: FinanceState, upTo?: string): number {
+  return includedAccounts(f).reduce((s, a) => s + accountBalance(f, a, upTo), 0);
 }
 
 export function monthTransactions(f: FinanceState, month: string): Transaction[] {
@@ -150,7 +154,7 @@ export function monthTransactions(f: FinanceState, month: string): Transaction[]
 }
 
 export function monthSummary(f: FinanceState, month: string, today = toDateKey()) {
-  const txs = monthTransactions(f, month);
+  const txs = monthTransactions(f, month).filter((t) => !t.isAdjust);
   const income = txs.filter((t) => t.kind === "income").reduce((s, t) => s + t.amount, 0);
   const incomePending = txs.filter((t) => t.kind === "income" && !t.paid).reduce((s, t) => s + t.amount, 0);
   const expense = txs.filter((t) => t.kind === "expense").reduce((s, t) => s + t.amount, 0);
@@ -167,7 +171,7 @@ export function monthSummary(f: FinanceState, month: string, today = toDateKey()
 export function spendByCategory(f: FinanceState, month: string) {
   const map = new Map<string | null, number>();
   for (const t of monthTransactions(f, month)) {
-    if (t.kind !== "expense") continue;
+    if (t.kind !== "expense" || t.isAdjust) continue;
     map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount);
   }
   return map;
@@ -395,7 +399,16 @@ export function saveAccount(s: AppState, a: Partial<FinAccount> & { name: string
     if (ex) Object.assign(ex, a);
     return;
   }
-  f.accounts.push({ id: uid(), name: a.name, type: a.type ?? "checking", initialBalance: a.initialBalance ?? 0, color: a.color ?? "#2e6b57", archived: false });
+  f.accounts.push({
+    id: uid(),
+    name: a.name,
+    type: a.type ?? "checking",
+    initialBalance: a.initialBalance ?? 0,
+    color: a.color ?? "#2e6b57",
+    archived: false,
+    bank: a.bank ?? null,
+    includeInTotal: a.includeInTotal ?? true,
+  });
 }
 
 export function saveCard(s: AppState, c: Partial<CreditCard> & { name: string }) {
@@ -405,7 +418,18 @@ export function saveCard(s: AppState, c: Partial<CreditCard> & { name: string })
     if (ex) Object.assign(ex, c);
     return;
   }
-  f.cards.push({ id: uid(), name: c.name, limit: c.limit ?? 0, closingDay: c.closingDay ?? 1, dueDay: c.dueDay ?? 10, color: c.color ?? "#173a5b", archived: false });
+  f.cards.push({
+    id: uid(),
+    name: c.name,
+    limit: c.limit ?? 0,
+    closingDay: c.closingDay ?? 1,
+    dueDay: c.dueDay ?? 10,
+    color: c.color ?? "#173a5b",
+    archived: false,
+    bank: c.bank ?? null,
+    brand: c.brand ?? null,
+    payAccountId: c.payAccountId ?? null,
+  });
 }
 
 /** Pode excluir de vez? Só se não houver lançamentos ligados; senão arquiva. */
@@ -425,4 +449,127 @@ export function removeCard(s: AppState, id: string) {
     const c = f.cards.find((x) => x.id === id);
     if (c) c.archived = true;
   } else f.cards = f.cards.filter((x) => x.id !== id);
+}
+
+// ---------- Resumo avançado ----------
+
+/** Saldo de uma conta previsto até uma data (inclui pendentes até lá). */
+export function accountForecast(f: FinanceState, acc: FinAccount, upTo: string): number {
+  let b = accountBalance(f, acc);
+  for (const t of f.transactions) {
+    if (t.paid || t.date > upTo) continue;
+    if (t.kind === "income" && t.accountId === acc.id) b += t.amount;
+    else if (t.kind === "expense" && !t.cardId && t.accountId === acc.id) b -= t.amount;
+    else if (t.kind === "transfer") {
+      if (t.accountId === acc.id) b -= t.amount;
+      if (t.toAccountId === acc.id) b += t.amount;
+    }
+  }
+  return b;
+}
+
+/** Saldo no início do mês (fim do mês anterior). */
+export function startBalance(f: FinanceState, month: string): number {
+  return totalBalance(f, `${addMonths(month, -1)}-31`);
+}
+
+/** Saldo dia a dia do mês: realizado até hoje e previsto depois. */
+export function dailyBalances(f: FinanceState, month: string, today = toDateKey()) {
+  const days = daysInMonth(month);
+  const out: { date: string; value: number; projected: boolean }[] = [];
+  const pendingInvoices = f.cards
+    .filter((c) => !c.archived)
+    .map((c) => {
+      const inv = invoice(f, c, month, today);
+      return { due: inv.due, amount: inv.remaining };
+    })
+    .filter((x) => x.amount > 0);
+  for (let d = 1; d <= days; d++) {
+    const date = dateInMonth(month, d);
+    if (date <= today) out.push({ date, value: totalBalance(f, date), projected: false });
+    else {
+      let v = includedAccounts(f).reduce((s, a) => s + accountForecast(f, a, date), 0);
+      v -= pendingInvoices.filter((i) => i.due <= date && i.due > today).reduce((s, i) => s + i.amount, 0);
+      out.push({ date, value: v, projected: true });
+    }
+  }
+  return out;
+}
+
+export function savingsRate(f: FinanceState, month: string) {
+  const s = monthSummary(f, month);
+  const saved = s.income - s.expense;
+  return { income: s.income, expense: s.expense, saved, pct: s.income > 0 ? Math.round((saved / s.income) * 100) : null };
+}
+
+/** Total das faturas do mês (todos os cartões) e limite disponível somado. */
+export function cardsOverview(f: FinanceState, month: string, today = toDateKey()) {
+  const cards = f.cards.filter((c) => !c.archived);
+  const invoices = cards.reduce((s, c) => s + invoice(f, c, month, today).total, 0);
+  const available = cards.reduce((s, c) => s + (c.limit - cardUsed(f, c)), 0);
+  return { invoices, available, count: cards.length };
+}
+
+/** Cria um lançamento de ajuste para o saldo da conta ficar igual ao informado. */
+export function adjustBalance(s: AppState, accountId: string, realBalance: number, date = toDateKey()) {
+  const acc = s.finance.accounts.find((a) => a.id === accountId);
+  if (!acc) return 0;
+  const diff = realBalance - accountBalance(s.finance, acc);
+  if (!diff) return 0;
+  s.finance.transactions.push({
+    id: uid(),
+    kind: diff > 0 ? "income" : "expense",
+    amount: Math.abs(diff),
+    date,
+    description: "Ajuste de saldo",
+    categoryId: null,
+    accountId,
+    toAccountId: null,
+    cardId: null,
+    invoiceMonth: null,
+    paid: true,
+    installment: null,
+    recurringId: null,
+    notes: "",
+    createdAt: new Date().toISOString(),
+    isAdjust: true,
+  });
+  return diff;
+}
+
+// ---------- Objetivos (juntar dinheiro) ----------
+
+export function goalSaved(g: { entries: { amount: number }[] }) {
+  return g.entries.reduce((s, e) => s + e.amount, 0);
+}
+
+export function monthsLeft(deadline: string | null, today = toDateKey()) {
+  if (!deadline) return null;
+  const [y1, m1] = today.split("-").map(Number);
+  const [y2, m2] = deadline.split("-").map(Number);
+  return Math.max(0, (y2 - y1) * 12 + (m2 - m1));
+}
+
+/** Linhas CSV (ponto e vírgula, padrão Excel BR) de todos os lançamentos. */
+export function transactionsCsv(f: FinanceState): string {
+  const cat = (id: string | null) => f.categories.find((c) => c.id === id)?.name ?? "";
+  const acc = (id: string | null) => f.accounts.find((a) => a.id === id)?.name ?? "";
+  const card = (id: string | null) => f.cards.find((c) => c.id === id)?.name ?? "";
+  const kindLabel: Record<string, string> = { income: "Receita", expense: "Despesa", transfer: "Transferência", card_payment: "Pagamento de fatura" };
+  const esc = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const head = ["Data", "Tipo", "Descrição", "Categoria", "Conta", "Cartão", "Valor", "Pago", "Parcela"];
+  const rows = [...f.transactions]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((t) => [
+      t.date.split("-").reverse().join("/"),
+      kindLabel[t.kind] ?? t.kind,
+      t.description,
+      cat(t.categoryId),
+      acc(t.accountId),
+      card(t.cardId),
+      ((t.kind === "expense" || t.kind === "card_payment" ? -1 : 1) * t.amount / 100).toFixed(2).replace(".", ","),
+      t.paid ? "Sim" : "Não",
+      t.installment ? `${t.installment.n}/${t.installment.total}` : "",
+    ]);
+  return [head, ...rows].map((r) => r.map((c) => esc(String(c))).join(";")).join("\r\n");
 }
