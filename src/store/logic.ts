@@ -428,6 +428,8 @@ export function saveBook(s: AppState, book: Partial<Book> & { title: string }) {
     pagesPerDay: book.pagesPerDay ?? 10,
     status: book.status === "current" ? "queued" : (book.status ?? "queued"),
     sortOrder: max + 1,
+    link: book.link ?? null,
+    file: book.file ?? null,
   });
 }
 

@@ -158,6 +158,13 @@ try {
   await page.getByRole("button", { name: /Marcar leitura como concluída/ }).click();
   await page.getByRole("button", { name: "Confirmar" }).click();
   check("Leitura: concluir capítulo atual", await page.getByText("1 de 21 capítulos").isVisible());
+  const bibleHref = await page.getByRole("link", { name: /no app da Bíblia/ }).getAttribute("href");
+  check("Leitura: abrir capítulo do dia no app da Bíblia", /bible\.com\/pt\/bible\/129\/JHN\.1\.NVI$/.test(bibleHref ?? ""), bibleHref ?? "");
+  await page.getByRole("button", { name: "Ver detalhes" }).click();
+  await page.getByRole("dialog").getByPlaceholder("Cole aqui o link do livro").fill("skeelo.com/livro/exemplo");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar" }).click();
+  const skeelo = page.getByRole("link", { name: "Continuar no Skeelo" });
+  check("Leitura: link do livro (Skeelo) com botão Continuar", (await skeelo.getAttribute("href")) === "https://skeelo.com/livro/exemplo");
   check("Sem rolagem horizontal (390px) em Leitura", await noHorizontalScroll(page));
 
   // ---------- Família ----------

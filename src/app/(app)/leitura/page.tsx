@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, BookOpen, ChevronRight, Layers, Plus, SquarePen, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, ChevronRight, ExternalLink, FileText, Layers, Plus, SquarePen, Trash2 } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { Bar, Card, CardHead, Check, Cta, Field, HeadLink, Modal, useToast } from "@/components/ui";
 import { SCREEN_VERSES } from "@/lib/content";
 import { dayMonth, toDateKey } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
 import type { Book } from "@/lib/types";
+import { BIBLE_VERSIONS, bibleChapterUrl } from "@/lib/bibleLinks";
+import { deleteFile, getFile, putFile } from "@/lib/files";
+import { uid } from "@/lib/id";
 import { useAppState } from "@/store/StoreProvider";
 import {
   addReflection,
@@ -35,6 +38,7 @@ export default function Leitura() {
   const [reflection, setReflection] = useState("");
 
   const bible = bibleStatus(s, today);
+  const bibleUrl = bibleChapterUrl(s.bible.book, bible.completedToday ? s.bible.currentUnit - 1 : s.bible.currentUnit, s.bible.version);
   const book = currentBook(s);
   const bs = bookStatus(s, book, today);
   const queue = queuedBooks(s);
@@ -78,6 +82,11 @@ export default function Leitura() {
               {bible.done} de {bible.total} capítulos
             </span>
           </div>
+          {bibleUrl && !bible.finished && (
+            <a className="btn sm read-out" href={bibleUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink size={16} /> Ler {bible.todayLabel} no app da Bíblia ({s.bible.version ?? "NVI"})
+            </a>
+          )}
           {bible.completedToday && (
             <p className="card-sub" style={{ marginTop: 8 }}>
               Capítulo de hoje concluído.{" "}
@@ -139,6 +148,20 @@ export default function Leitura() {
                   <Bar value={bs.pct ?? 0} label="Progresso do livro" />
                   <span className="meta">{bs.pct != null ? `${bs.pct}% concluído` : `pág. ${book.currentPage}`}</span>
                 </div>
+                {(book.link || book.file) && (
+                  <div className="read-actions">
+                    {book.link && (
+                      <a className="btn sm read-out" href={book.link} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink size={16} /> {linkLabel(book.link)}
+                      </a>
+                    )}
+                    {book.file && (
+                      <button type="button" className="btn sm read-out" onClick={() => void openBookFile(book, toast)}>
+                        <FileText size={16} /> Ler arquivo
+                      </button>
+                    )}
+                  </div>
+                )}
                 {bs.needsSetup && (
                   <button type="button" className="inline-link" style={{ marginTop: 10, fontSize: 14.5 }} onClick={() => setModal("book")}>
                     Definir título e total de páginas
@@ -231,6 +254,35 @@ export default function Leitura() {
   );
 }
 
+function linkLabel(url: string) {
+  const u = url.toLowerCase();
+  if (u.includes("skeelo")) return "Continuar no Skeelo";
+  if (u.includes("kindle") || u.includes("amazon")) return "Continuar no Kindle";
+  if (u.includes("play.google")) return "Continuar no Google Play Livros";
+  if (u.includes("kobo")) return "Continuar no Kobo";
+  return "Continuar lendo";
+}
+
+/** Abre o arquivo guardado neste aparelho (PDF no visualizador; EPUB no app de leitura do celular). */
+async function openBookFile(book: Book, toast: (t: string) => void) {
+  if (!book.file) return;
+  const blob = await getFile(book.file.id).catch(() => undefined);
+  if (!blob) {
+    toast("O arquivo não está neste aparelho. Adicione de novo em “Ver detalhes”.");
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  if (book.file.type !== "application/pdf") a.download = book.file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 function BookCover({ book }: { book: Book }) {
   return (
     <div className="book-cover" aria-hidden="true">
@@ -260,6 +312,7 @@ function PlanEditor({ onClose }: { onClose: () => void }) {
   const [bookName, setBookName] = useState(s.bible.book);
   const [total, setTotal] = useState(s.bible.totalUnits);
   const [current, setCurrent] = useState(s.bible.currentUnit);
+  const [version, setVersion] = useState(s.bible.version ?? "NVI");
 
   return (
     <div>
@@ -283,6 +336,7 @@ function PlanEditor({ onClose }: { onClose: () => void }) {
             d.bible.book = bookName.trim() || d.bible.book;
             d.bible.totalUnits = tot;
             d.bible.currentUnit = Math.max(1, Math.min(Number(current) || 1, tot + 1));
+            d.bible.version = version;
           });
           toast("Plano atualizado.");
           onClose();
@@ -302,12 +356,32 @@ function PlanEditor({ onClose }: { onClose: () => void }) {
         <Field label="Próximo capítulo a ler">
           <input className="input" type="number" inputMode="numeric" min={1} value={current} onChange={(e) => setCurrent(Number(e.target.value))} />
         </Field>
+        <Field label="Versão para abrir no app da Bíblia (YouVersion)">
+          <select className="select" value={version} onChange={(e) => setVersion(e.target.value)}>
+            {BIBLE_VERSIONS.map((v) => (
+              <option key={v.abbr} value={v.abbr}>
+                {v.abbr} — {v.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {!bibleChapterUrl(bookName, 1) && bookName.trim() && (
+          <p className="card-sub" style={{ marginTop: -4 }}>
+            Não reconheci “{bookName}”. Escreva o nome do livro bíblico por extenso (ex.: João, Salmos, 1 Coríntios) para o botão do app da Bíblia aparecer.
+          </p>
+        )}
         <button type="submit" className="btn primary block">
           Salvar plano
         </button>
       </form>
     </div>
   );
+}
+
+function normalizeLink(v: string): string | null {
+  const t = v.trim();
+  if (!t) return null;
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
 function BookEditor({ book, onClose }: { book?: Book; onClose: () => void }) {
@@ -318,6 +392,9 @@ function BookEditor({ book, onClose }: { book?: Book; onClose: () => void }) {
   const [total, setTotal] = useState<string>(book?.totalPages ? String(book.totalPages) : "");
   const [page, setPage] = useState<string>(String(book?.currentPage ?? 0));
   const [perDay, setPerDay] = useState<string>(String(book?.pagesPerDay ?? 10));
+  const [link, setLink] = useState(book?.link ?? "");
+  const [file, setFile] = useState<Book["file"]>(book?.file ?? null);
+  const [newFile, setNewFile] = useState<File | null>(null);
 
   return (
     <form
@@ -330,7 +407,11 @@ function BookEditor({ book, onClose }: { book?: Book; onClose: () => void }) {
           totalPages: total ? Math.max(1, Number(total)) : null,
           currentPage: Math.max(0, Number(page) || 0),
           pagesPerDay: Math.max(1, Number(perDay) || 10),
+          link: normalizeLink(link),
+          file: newFile ? { id: uid(), name: newFile.name, type: newFile.type || (newFile.name.toLowerCase().endsWith(".epub") ? "application/epub+zip" : "application/pdf") } : file,
         };
+        if (newFile && data.file) void putFile(data.file.id, newFile).catch(() => toast("Não consegui guardar o arquivo neste aparelho."));
+        if (book?.file && book.file.id !== data.file?.id) void deleteFile(book.file.id).catch(() => {});
         mutate((d) => {
           if (book) saveBook(d, { ...data, id: book.id });
           else {
@@ -359,6 +440,47 @@ function BookEditor({ book, onClose }: { book?: Book; onClose: () => void }) {
       </div>
       <Field label="Meta de páginas por dia">
         <input className="input" type="number" inputMode="numeric" min={1} value={perDay} onChange={(e) => setPerDay(e.target.value)} />
+      </Field>
+      <Field label="Onde estou lendo (link do Skeelo, Kindle ou site)">
+        <input className="input" type="text" inputMode="url" autoCapitalize="none" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Cole aqui o link do livro" />
+      </Field>
+      <Field label="Arquivo do livro (PDF ou EPUB sem proteção)" group>
+        {file || newFile ? (
+          <div className="chips">
+            <span className="chip" aria-pressed="true">
+              <FileText size={16} /> {newFile?.name ?? file?.name}
+            </span>
+            <button
+              type="button"
+              className="btn sm ghost"
+              onClick={() => {
+                setNewFile(null);
+                setFile(null);
+              }}
+            >
+              Remover
+            </button>
+          </div>
+        ) : (
+          <label className="btn sm" style={{ width: "fit-content" }}>
+            <FileText size={16} /> Escolher arquivo
+            <input
+              type="file"
+              accept=".pdf,.epub,application/pdf,application/epub+zip"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (f.size > 60 * 1024 * 1024) {
+                  toast("Arquivo muito grande (máximo 60 MB).");
+                  return;
+                }
+                setNewFile(f);
+              }}
+            />
+          </label>
+        )}
+        <small className="field-hint">Fica guardado só neste aparelho. Livros comprados em lojas (Skeelo, Kindle) são protegidos e só abrem no app delas — para esses, use o link acima.</small>
       </Field>
       <button type="submit" className="btn primary block">
         Salvar

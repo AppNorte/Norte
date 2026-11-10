@@ -67,6 +67,7 @@ export interface BiblePlan {
   book: string;
   totalUnits: number;
   currentUnit: number; // próximo capítulo a ler
+  version?: string; // versão para abrir no app da Bíblia (NVI, ARA…)
 }
 
 export interface BibleReading {
@@ -88,6 +89,8 @@ export interface Book {
   pagesPerDay: number;
   status: BookStatus;
   sortOrder: number;
+  link?: string | null; // onde o livro está (Skeelo, Kindle, site…)
+  file?: { id: string; name: string; type: string } | null; // arquivo próprio (PDF/EPUB sem proteção), guardado neste aparelho
 }
 
 export interface BookLog {

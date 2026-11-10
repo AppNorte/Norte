@@ -4617,3 +4617,20 @@ details.more[open] {
   gap: 8px;
   margin-top: 8px;
 }
+
+/* Leitura: abrir no app da Bíblia / Skeelo / arquivo */
+.read-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn.read-out {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.card > .read-out {
+  margin-top: 12px;
+}
