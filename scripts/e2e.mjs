@@ -514,6 +514,13 @@ try {
   await billsCard.getByRole("checkbox", { name: /Marcar Conta de água como paga/ }).click();
   const agua = (await txs()).find((t) => t.description === "Conta de água");
   check("Resumo: marcar conta como paga num toque", agua?.paid === true);
+  await billsCard.getByRole("button", { name: "Esconder contas pendentes" }).click();
+  const hidden = (await billsCard.locator(".bills").count()) === 0;
+  await page.reload();
+  await page.locator(".bills-card").waitFor();
+  const stillHidden = await page.getByRole("button", { name: "Mostrar contas pendentes" }).isVisible();
+  await page.getByRole("button", { name: "Mostrar contas pendentes" }).click();
+  check("Resumo: esconder contas pendentes (e lembrar a escolha)", hidden && stillHidden);
   await billsCard.getByRole("button", { name: /Pagas no mês|Esconder pagas/ }).first().click().catch(() => {});
 
   // ---------- Avisos e Google Agenda ----------

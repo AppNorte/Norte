@@ -4634,3 +4634,37 @@ details.more[open] {
 .card > .read-out {
   margin-top: 12px;
 }
+
+.bills-card {
+  position: relative;
+}
+
+.bills-card .bills-head {
+  padding: 0 34px;
+}
+
+.bills-toggle {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--text-2);
+  transition: transform 0.15s;
+}
+
+.bills-card.collapsed .bills-toggle {
+  transform: rotate(-90deg);
+}
+
+.bills-card.collapsed .bills-head {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.bills-card.collapsed {
+  padding-bottom: 16px;
+}
