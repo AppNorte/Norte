@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CreditCard as CardIcon, FileUp, Landmark, Plus, ScanLine, Scale } from "lucide-react";
-import { Bar, Card, CardHead, Check, Cta, HeadLink, useToast } from "@/components/ui";
+import { Bar, Card, CardHead, Cta, HeadLink } from "@/components/ui";
 import { CatDot } from "@/components/finance/FinIcon";
 import { TxForm } from "@/components/finance/TxForm";
 import { ImportSheet } from "@/components/finance/ImportSheet";
 import { InvoiceSheet } from "@/components/finance/Sheets";
 import { DailyChart } from "@/components/finance/DailyChart";
+import { BillsCard } from "@/components/finance/BillsCard";
 import { BrandChip, FinanceShell, MonthSwitch, useFinMonth } from "@/components/finance/Shell";
 import { toDateKey } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
@@ -27,8 +28,6 @@ import {
   savingsRate,
   spendByCategory,
   startBalance,
-  togglePaid,
-  upcomingBills,
 } from "@/lib/finance/logic";
 import type { Transaction, TxKind } from "@/lib/types";
 import { useAppState } from "@/store/StoreProvider";
@@ -49,7 +48,6 @@ function Gauge({ pct }: { pct: number | null }) {
 
 export default function Financas() {
   const { s, mutate } = useAppState();
-  const toast = useToast();
   const now = useNow();
   const today = toDateKey(now);
   const [month, setMonth] = useFinMonth();
@@ -67,8 +65,6 @@ export default function Financas() {
   const sum = monthSummary(f, month, today);
   const start = startBalance(f, month);
   const daily = dailyBalances(f, month, today);
-  const isCurrent = month === monthOf(today);
-  const bills = isCurrent ? upcomingBills(f, today, 7) : [];
   const cards = cardsOverview(f, month, today);
   const eco = savingsRate(f, month);
   const incReal = sum.income - sum.incomePending;
@@ -97,6 +93,8 @@ export default function Financas() {
   return (
     <FinanceShell>
       <MonthSwitch month={month} onChange={setMonth} />
+
+      <BillsCard month={month} today={today} onOpenTx={(id) => setTx({ id })} onOpenInvoice={(cardId, m) => setInv({ cardId, month: m })} />
 
       <Card className="wide">
         <div className="trio">
@@ -183,43 +181,6 @@ export default function Financas() {
           </span>
         </Link>
       </div>
-
-      {isCurrent && (
-        <Card>
-          <CardHead title="A pagar e receber" sub="Vencidos e próximos 7 dias." />
-          {bills.length === 0 ? (
-            <p className="empty">Nada vencendo nos próximos dias. Respire tranquilo.</p>
-          ) : (
-            <ul className="list">
-              {bills.map((b) => (
-                <li className="row" key={b.id}>
-                  <span className={`bill-date ${b.overdue ? "late" : ""}`}>{b.overdue ? "Atrasada" : b.date === today ? "Hoje" : dayLabel(b.date)}</span>
-                  <span className="row-main" style={{ fontSize: 15.5 }}>
-                    {b.label}
-                    <small>
-                      {b.income ? "a receber" : "a pagar"} · {money(b.amount, hide)}
-                    </small>
-                  </span>
-                  {b.kind === "tx" ? (
-                    <Check
-                      checked={false}
-                      label={`Marcar ${b.label} como ${b.income ? "recebido" : "pago"}`}
-                      onChange={() => {
-                        mutate((d) => togglePaid(d, b.id));
-                        toast(b.income ? "Marcado como recebido." : "Marcado como pago.", () => mutate((d) => togglePaid(d, b.id)));
-                      }}
-                    />
-                  ) : (
-                    <button type="button" className="btn sm" onClick={() => setInv({ cardId: b.cardId!, month: b.month! })}>
-                      Pagar
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      )}
 
       <Card>
         <CardHead title="Economia mensal" sub={`Quanto sobrou da renda em ${monthLabel(month).split(" ")[0].toLowerCase()}.`} />

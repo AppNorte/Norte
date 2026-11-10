@@ -475,6 +475,23 @@ try {
   check("Lançamento: salvar e continuar mantém a janela aberta", (await page.getByRole("dialog").isVisible()) && (await page.getByRole("dialog").getByLabel("Valor", { exact: true }).inputValue()) === "");
   await page.keyboard.press("Escape");
 
+  // ---------- Contas do mês abaixo do seletor de mês ----------
+  await page.goto(`${BASE}/financas`);
+  await page.getByRole("button", { name: "Novo lançamento" }).click();
+  await page.getByRole("dialog").getByLabel("Valor", { exact: true }).fill("95,40");
+  await page.getByRole("dialog").getByPlaceholder(/Mercado do mês/).fill("Conta de água");
+  await page.getByRole("dialog").getByRole("button", { name: "Conta principal" }).click();
+  await page.getByRole("dialog").getByRole("switch", { name: "Pago" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar lançamento" }).click();
+  const billsCard = page.locator(".bills-card");
+  check("Resumo: contas pendentes logo abaixo do mês", (await billsCard.getByText(/contas? pendentes?/).isVisible()) && (await billsCard.getByText("Conta de água").isVisible()));
+  const order = await page.evaluate(() => [...document.querySelector(".sheet").children].map((c) => c.className));
+  check("Resumo: aviso de contas vem logo depois do mês", order.indexOf("month-switch fin-month") + 1 === order.findIndex((c) => c.includes("bills-card")), order.join(" | "));
+  await billsCard.getByRole("checkbox", { name: /Marcar Conta de água como paga/ }).click();
+  const agua = (await txs()).find((t) => t.description === "Conta de água");
+  check("Resumo: marcar conta como paga num toque", agua?.paid === true);
+  await billsCard.getByRole("button", { name: /Pagas no mês|Esconder pagas/ }).first().click().catch(() => {});
+
   // ---------- Avisos e Google Agenda ----------
   await page.goto(`${BASE}/financas`);
   await page.getByRole("button", { name: "Novo lançamento" }).click();

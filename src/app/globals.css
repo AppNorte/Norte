@@ -4499,3 +4499,102 @@ details.more[open] > summary::after {
 details.more[open] {
   padding-bottom: 6px;
 }
+
+/* =================== Contas do mês (Resumo) =================== */
+.bills-card {
+  padding-top: 18px;
+}
+
+.bills-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.bills-head svg {
+  color: var(--green);
+}
+
+.bills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.bill-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.bill-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.bill-top > b {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.bill-top .late {
+  color: #b23a3a;
+}
+
+.bill-name {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bill-tags:empty {
+  display: none;
+}
+
+.bill-tags i {
+  font-style: normal;
+  font-size: 12.5px;
+}
+
+.bill.is-paid .bill-name,
+.bill.is-paid .bill-top > b {
+  color: var(--text-2);
+  text-decoration: line-through;
+}
+
+.bills-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.bills-actions:empty {
+  display: none;
+}

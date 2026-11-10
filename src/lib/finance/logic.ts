@@ -213,6 +213,68 @@ export function upcomingBills(f: FinanceState, today = toDateKey(), days = 7) {
   return bills.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+export interface MonthBill {
+  id: string; // id do lançamento, ou "cardId:mês" para fatura
+  label: string;
+  date: string;
+  amount: number;
+  kind: "tx" | "invoice";
+  income: boolean;
+  paid: boolean;
+  overdue: boolean;
+  cardId?: string;
+  month?: string;
+}
+
+/**
+ * Contas do mês escolhido: a pagar (e a receber), pagas e — no mês atual — as atrasadas de meses anteriores.
+ * Compras no cartão entram pela fatura que vence no mês.
+ */
+export function monthBills(f: FinanceState, month: string, today = toDateKey()) {
+  const isCurrent = month === monthOf(today);
+  const out: MonthBill[] = [];
+  for (const t of f.transactions) {
+    if (t.cardId || t.isAdjust || (t.kind !== "expense" && t.kind !== "income")) continue;
+    const m = monthOf(t.date);
+    const inMonth = m === month;
+    const lateFromBefore = isCurrent && m < month && !t.paid;
+    // Pagas: só as que costumam ser "contas" (fixas ou parceladas); avulsas pagas na hora não poluem a lista.
+    if (!inMonth && !lateFromBefore) continue;
+    if (t.paid && !(inMonth && (t.recurringId || t.installment))) continue;
+    out.push({
+      id: t.id,
+      label: t.description || (t.kind === "income" ? "Receita" : "Conta"),
+      date: t.date,
+      amount: t.amount,
+      kind: "tx",
+      income: t.kind === "income",
+      paid: t.paid,
+      overdue: !t.paid && t.date < today,
+    });
+  }
+  for (const c of f.cards.filter((x) => !x.archived)) {
+    const inv = invoice(f, c, month, today);
+    if (inv.total <= 0) continue;
+    out.push({
+      id: `${c.id}:${month}`,
+      label: `Fatura ${c.name}`,
+      date: inv.due,
+      amount: inv.status === "paid" ? inv.total : inv.remaining,
+      kind: "invoice",
+      income: false,
+      paid: inv.status === "paid",
+      overdue: inv.status !== "paid" && inv.due < today,
+      cardId: c.id,
+      month,
+    });
+  }
+  out.sort((a, b) => Number(a.paid) - Number(b.paid) || a.date.localeCompare(b.date));
+  const toPay = out.filter((b) => !b.paid && !b.income);
+  const toReceive = out.filter((b) => !b.paid && b.income);
+  const paid = out.filter((b) => b.paid);
+  return { toPay, toReceive, paid, totalToPay: toPay.reduce((a, b) => a + b.amount, 0), totalToReceive: toReceive.reduce((a, b) => a + b.amount, 0) };
+}
+
 // ---------- Mutações ----------
 
 export interface TxInput {
