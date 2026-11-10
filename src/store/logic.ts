@@ -642,3 +642,48 @@ export function executeAction(s: AppState, action: ProposedAction): { ok: boolea
       return { ok: false, message: "Ação não autorizada." };
   }
 }
+
+// ---------- Transferir itens entre manhã e noite ----------
+
+const otherPeriod = (p: Period): Period => (p === "morning" ? "evening" : "morning");
+
+/** Move itens para o outro período (vão para o fim da lista de lá). O "Acordar" nunca sai da manhã. */
+export function moveRoutineItems(s: AppState, ids: string[], to: Period) {
+  let max = Math.max(0, ...s.routine.filter((r) => r.period === to).map((r) => r.sortOrder));
+  for (const r of routineForIds(s, ids)) {
+    if (r.kind === "wake" || r.period === to) continue;
+    r.period = to;
+    r.sortOrder = max += 10;
+  }
+}
+
+/** Copia itens para o outro período (cópias novas, mesma ordem). */
+export function copyRoutineItems(s: AppState, ids: string[], to: Period) {
+  let max = Math.max(0, ...s.routine.filter((r) => r.period === to).map((r) => r.sortOrder));
+  for (const r of routineForIds(s, ids)) {
+    if (r.kind === "wake") continue;
+    s.routine.push({ ...r, id: uid(), period: to, kind: "normal", sortOrder: (max += 10) });
+  }
+}
+
+/** Troca a rotina da manhã com a da noite (o "Acordar" continua sendo o primeiro da manhã). */
+export function swapRoutinePeriods(s: AppState) {
+  const morning = routineFor(s, "morning", true).filter((r) => r.kind !== "wake");
+  const evening = routineFor(s, "evening", true);
+  const wakeMax = Math.max(0, ...s.routine.filter((r) => r.kind === "wake").map((r) => r.sortOrder));
+  evening.forEach((r, k) => {
+    r.period = "morning";
+    r.sortOrder = wakeMax + (k + 1) * 10;
+  });
+  morning.forEach((r, k) => {
+    r.period = "evening";
+    r.sortOrder = (k + 1) * 10;
+  });
+}
+
+function routineForIds(s: AppState, ids: string[]) {
+  const set = new Set(ids);
+  return s.routine.filter((r) => set.has(r.id)).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export { otherPeriod };

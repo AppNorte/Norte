@@ -4598,3 +4598,22 @@ details.more[open] {
 .bills-actions:empty {
   display: none;
 }
+
+/* Rotina: passar itens entre manhã e noite */
+.transfer-box {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.transfer-box small {
+  color: var(--text-2);
+}
+
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}

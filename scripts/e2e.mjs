@@ -103,6 +103,23 @@ try {
   await page.getByRole("dialog").getByRole("button", { name: "Descer" }).first().click();
   await page.getByRole("button", { name: "Pronto" }).click();
   check("Rotina: editar horário/ordem", await page.getByText("21h30").isVisible());
+  // Trocar manhã ↔ noite, desfazer, e mover um item escolhido
+  const periodOf = (title) => page.evaluate((t) => JSON.parse(localStorage.getItem("norte:v1")).routine.find((r) => r.title === t)?.period, title);
+  await page.getByRole("button", { name: "Editar" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Trocar manhã ↔ noite" }).click();
+  await page.waitForTimeout(300);
+  const swapped = (await periodOf("Dormir")) === "morning" && (await periodOf("Café")) === "evening" && (await periodOf("Acordar")) === "morning";
+  check("Rotina: trocar manhã ↔ noite (Acordar fica na manhã)", swapped);
+  await page.locator(".toast").getByRole("button", { name: "Desfazer" }).click();
+  await page.waitForTimeout(300);
+  check("Rotina: desfazer a troca", (await periodOf("Dormir")) === "evening");
+  await page.getByRole("dialog").getByRole("button", { name: "Escolher itens" }).click();
+  await page.getByRole("dialog").getByRole("checkbox", { name: "Escolher Deixar água pronta" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^Mover 1 para a/ }).click();
+  await page.waitForTimeout(300);
+  check("Rotina: mover item escolhido para o outro período", (await periodOf("Deixar água pronta")) === "morning");
+  await page.locator(".toast").getByRole("button", { name: "Desfazer" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Pronto" }).click();
 
   // Pular um dia não quebra: avança o relógio 2 dias
   await page.clock.setFixedTime(new Date("2026-09-13T09:41:00-03:00"));
