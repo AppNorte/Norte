@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BellRing, BookOpen, CalendarClock, CalendarDays, Cloud, Flame, House, Settings, ShoppingBasket, Target, UserRound, Users, Wallet } from "lucide-react";
+import { BellRing, BookOpen, CalendarClock, CalendarDays, Cloud, Flame, GraduationCap, House, Settings, ShoppingBasket, Target, UserRound, Users, Wallet, ListChecks } from "lucide-react";
 import { Compass } from "./Compass";
 import { SettingsSheet } from "./SettingsSheet";
 import { useAppState } from "@/store/StoreProvider";
@@ -18,18 +18,23 @@ export function SideNav() {
 
   const main = [
     { href: "/hoje", label: "Hoje", Icon: House },
+    { href: "/agenda", label: "Agenda", Icon: CalendarDays },
     { href: "/financas", label: "Finanças", Icon: Wallet },
-    { href: "/casa", label: "Casa", Icon: ShoppingBasket },
-    { href: "/rotina", label: "Rotina", Icon: CalendarDays },
+    { href: "/aprender", label: "Aprender", Icon: GraduationCap },
   ];
   const more = [
+    { href: "/avisos", label: "Avisos", Icon: BellRing },
     { href: "/fe", label: s.me.faith === "nenhuma" ? "Força diária" : "Fé e força", Icon: Flame },
-    { href: "/metas", label: "Metas e hábitos", Icon: Target },
+    { href: "/perfil", label: "Meu perfil", Icon: UserRound },
+  ];
+  // Recursos que saíram do menu principal (dados guardados; dá para abrir quando quiser).
+  const stored = [
+    { href: "/rotina", label: "Rotina", Icon: ListChecks },
+    { href: "/casa", label: "Casa", Icon: ShoppingBasket },
     { href: "/leitura", label: "Leitura", Icon: BookOpen },
     { href: "/familia", label: "Família", Icon: Users },
+    { href: "/metas", label: "Metas e hábitos", Icon: Target },
     { href: "/meu-dia", label: "Meu dia", Icon: CalendarClock },
-    { href: "/avisos", label: "Avisos", Icon: BellRing },
-    { href: "/perfil", label: "Meu perfil", Icon: UserRound },
   ];
   const item = ({ href, label, Icon }: (typeof main)[number]) => {
     const active = path === href || path.startsWith(`${href}/`);
@@ -51,6 +56,10 @@ export function SideNav() {
         {main.map(item)}
         <span className="side-label">Mais</span>
         {more.map(item)}
+        <details className="side-stored" open={stored.some((x) => path.startsWith(x.href)) || undefined}>
+          <summary className="side-label">Recursos guardados</summary>
+          {stored.map(item)}
+        </details>
       </nav>
       <div className="side-foot">
         <Link href="/assistente" className="side-ai" aria-current={path.startsWith("/assistente") ? "page" : undefined}>

@@ -3,7 +3,7 @@ import type { AppState, FocusArea, IconKey, RoutineItem } from "./types";
 import { toDateKey } from "./dates";
 import { uid } from "./id";
 import { defaultFinance } from "./finance/defaults";
-import { defaultFaith, defaultGrowth, defaultMe, defaultPantry } from "./defaults";
+import { defaultCalendar, defaultFaith, defaultGrowth, defaultLearn, defaultMe, defaultPantry } from "./defaults";
 
 /** Sugere um ícone a partir do título (o usuário pode trocar depois). */
 export function guessIcon(title: string): IconKey {
@@ -181,5 +181,7 @@ export function buildInitialState(input: OnboardingInput = onboardingDefaults())
     faith: defaultFaith(),
     me: defaultMe(),
     growth: defaultGrowth(),
+    calendar: defaultCalendar(),
+    learn: defaultLearn(),
   };
 }

@@ -2,14 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, House, LayoutGrid, ShoppingBasket, Wallet } from "lucide-react";
+import { CalendarDays, GraduationCap, House, LayoutGrid, Wallet } from "lucide-react";
 
 const TABS = [
-  { href: "/hoje", label: "Hoje", Icon: House, match: ["/hoje", "/meu-dia"] },
+  { href: "/hoje", label: "Hoje", Icon: House, match: ["/hoje"] },
+  { href: "/agenda", label: "Agenda", Icon: CalendarDays, match: ["/agenda"] },
   { href: "/financas", label: "Finanças", Icon: Wallet, match: ["/financas"] },
-  { href: "/casa", label: "Casa", Icon: ShoppingBasket, match: ["/casa"] },
-  { href: "/rotina", label: "Rotina", Icon: CalendarDays, match: ["/rotina"] },
-  { href: "/mais", label: "Mais", Icon: LayoutGrid, match: ["/mais", "/leitura", "/familia", "/assistente", "/conta", "/fe", "/metas", "/perfil"] },
+  { href: "/aprender", label: "Aprender", Icon: GraduationCap, match: ["/aprender"] },
+  {
+    href: "/mais",
+    label: "Mais",
+    Icon: LayoutGrid,
+    match: ["/mais", "/avisos", "/assistente", "/conta", "/fe", "/perfil", "/rotina", "/casa", "/leitura", "/familia", "/metas", "/meu-dia"],
+  },
 ];
 
 export function BottomNav() {

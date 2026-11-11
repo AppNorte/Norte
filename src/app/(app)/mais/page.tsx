@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BellRing, BookOpen, CalendarClock, Cloud, Flame, Settings, Target, UserRound, Users } from "lucide-react";
+import { BellRing, BookOpen, CalendarClock, Cloud, Flame, ListChecks, Settings, ShoppingBasket, Target, UserRound, Users } from "lucide-react";
 import { Compass } from "@/components/Compass";
 import { Hero } from "@/components/Hero";
 import { SettingsSheet } from "@/components/SettingsSheet";
@@ -15,20 +15,25 @@ export default function Mais() {
   const [settings, setSettings] = useState(false);
 
   const items = [
+    { href: "/avisos", title: "Avisos", sub: "Notificações de contas e compromissos", icon: <BellRing size={24} /> },
     { href: "/fe", title: s.me.faith === "nenhuma" ? "Força diária" : "Fé e força", sub: "Mensagem do dia, gratidão e oração", icon: <Flame size={24} /> },
-    { href: "/metas", title: "Metas e hábitos", sub: "Objetivos, hábitos, humor e revisão", icon: <Target size={24} /> },
-    { href: "/perfil", title: "Meu perfil", sub: "Para o NORTE te conhecer melhor", icon: <UserRound size={24} /> },
-    { href: "/leitura", title: "Leitura", sub: "Bíblia, livro atual e reflexões", icon: <BookOpen size={24} /> },
-    { href: "/familia", title: "Família", sub: "Pessoas importantes e momentos", icon: <Users size={24} /> },
-    { href: "/avisos", title: "Avisos", sub: "Notificações e Google Agenda", icon: <BellRing size={24} /> },
-    { href: "/meu-dia", title: "Meu dia", sub: "Manhã, tarde e noite", icon: <CalendarClock size={24} /> },
     { href: "/assistente", title: "Assistente", sub: "Pergunte ao NORTE", icon: <Compass size={26} ring={false} /> },
+    { href: "/perfil", title: "Meu perfil", sub: "Para o NORTE te conhecer melhor", icon: <UserRound size={24} /> },
     {
       href: "/conta",
       title: "Conta e backup",
       sub: !syncConfigured ? "Salvo neste aparelho" : sync.user ? `Sincronizado · ${sync.user.email}` : "Entre para salvar na nuvem",
       icon: <Cloud size={24} />,
     },
+  ];
+  // Saíram do menu principal; os dados continuam guardados.
+  const stored = [
+    { href: "/rotina", title: "Rotina", icon: <ListChecks size={20} /> },
+    { href: "/casa", title: "Casa e compras", icon: <ShoppingBasket size={20} /> },
+    { href: "/leitura", title: "Leitura", icon: <BookOpen size={20} /> },
+    { href: "/familia", title: "Família", icon: <Users size={20} /> },
+    { href: "/metas", title: "Metas e hábitos", icon: <Target size={20} /> },
+    { href: "/meu-dia", title: "Meu dia", icon: <CalendarClock size={20} /> },
   ];
 
   return (
@@ -57,6 +62,17 @@ export default function Mais() {
             </span>
           </button>
         </div>
+        <details className="stored">
+          <summary>Recursos guardados</summary>
+          <p className="card-sub">Saíram do menu para o NORTE focar em agenda e finanças. Seus dados continuam aqui.</p>
+          <div className="stored-list">
+            {stored.map((it) => (
+              <Link key={it.href} href={it.href} className="chip">
+                {it.icon} {it.title}
+              </Link>
+            ))}
+          </div>
+        </details>
       </div>
       <SettingsSheet open={settings} onClose={() => setSettings(false)} />
     </>

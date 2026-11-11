@@ -27,12 +27,19 @@ export interface ReminderState {
 
 export interface ReminderPrefs {
   hour: number; // hora local do aviso da manhã (0–23)
+  agenda?: boolean; // compromissos do dia (Google Agenda) — padrão: sim
   bills: boolean; // contas a pagar e receber
   daysBefore: number; // avisar com quantos dias de antecedência (0 = só no dia)
   daily: boolean; // resumo do dia: leitura, prioridades, rotina e mensagem
 }
 
-export const DEFAULT_PREFS: ReminderPrefs = { hour: 8, bills: true, daysBefore: 1, daily: true };
+export const DEFAULT_PREFS: ReminderPrefs = { hour: 8, bills: true, daysBefore: 1, daily: true, agenda: true };
+
+/** Compromisso do dia (vindo do Google Agenda). */
+export interface DayEvent {
+  title: string;
+  time: string | null; // null = dia inteiro
+}
 
 export interface DayMessage {
   date: string;
@@ -132,7 +139,7 @@ function whenLabel(date: string, today: string): string {
 }
 
 /** Monta as notificações da manhã. Lista vazia = nada a avisar. */
-export function buildNotifications(s: ReminderState, today: string, prefs: ReminderPrefs, messages: DayMessage[] = []): PushMessage[] {
+export function buildNotifications(s: ReminderState, today: string, prefs: ReminderPrefs, messages: DayMessage[] = [], events: DayEvent[] = []): PushMessage[] {
   const out: PushMessage[] = [];
   const hide = Boolean(s.finance?.hideValues);
 
@@ -152,20 +159,19 @@ export function buildNotifications(s: ReminderState, today: string, prefs: Remin
     }
   }
 
-  if (prefs.daily) {
-    const parts: string[] = [];
-    const b = s.bible;
-    if (b?.book && b.currentUnit && (!b.totalUnits || b.currentUnit <= b.totalUnits)) parts.push(`Leitura: ${b.book} ${b.currentUnit}`);
-    const book = (s.books ?? []).find((x) => x.status === "current");
-    if (book) parts.push(`Livro: ${book.title}`);
-    const prios = (s.priorities ?? []).filter((p) => p.date === today && p.status === "pending").length;
-    if (prios) parts.push(`${prios} ${prios === 1 ? "prioridade" : "prioridades"}`);
-    const routine = (s.routine ?? []).filter((r) => r.active && r.kind !== "wake").length;
-    if (routine) parts.push(`${routine} ${routine === 1 ? "item" : "itens"} na rotina`);
-    const msg = messages.find((m) => m.date === today)?.text;
+  const showAgenda = prefs.agenda !== false;
+  if (prefs.daily || (showAgenda && events.length)) {
+    const lines: string[] = [];
+    if (showAgenda) {
+      if (events.length) {
+        const list = events.slice(0, 4).map((e) => (e.time ? `${e.time} ${e.title}` : e.title));
+        lines.push(`Hoje: ${list.join(" · ")}${events.length > 4 ? ` · +${events.length - 4}` : ""}`);
+      } else if (prefs.daily) lines.push("Agenda livre hoje.");
+    }
+    const msg = prefs.daily ? messages.find((m) => m.date === today)?.text : undefined;
+    if (msg) lines.push(msg);
     const name = s.profile?.displayName?.trim();
-    const body = [parts.join(" · "), msg].filter(Boolean).join("\n");
-    if (body) out.push({ title: name ? `Bom dia, ${name}!` : "Bom dia!", body, url: "/hoje/", tag: `dia-${today}` });
+    if (lines.length) out.push({ title: name ? `Bom dia, ${name}!` : "Bom dia!", body: lines.join("\n"), url: events.length ? "/agenda/" : "/hoje/", tag: `dia-${today}` });
   }
 
   return out;

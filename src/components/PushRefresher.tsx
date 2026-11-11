@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { addDays, toDateKey } from "@/lib/dates";
 import { pickLocalMessage } from "@/lib/faith/messages";
 import { loadPrefs, refreshPush } from "@/lib/push";
-import type { DayMessage } from "@/lib/reminders";
+import { upcomingBills, type DayMessage } from "@/lib/reminders";
 import type { AppState } from "@/lib/types";
 import { useAppState } from "@/store/StoreProvider";
 import { useSync } from "@/store/SyncProvider";
@@ -14,8 +14,10 @@ export function upcomingMessages(s: AppState): DayMessage[] {
   const today = toDateKey();
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(today, i);
+    // Dia com conta vencendo: mensagem sobre mordomia; senão, a mensagem do dia.
+    const hasBill = upcomingBills(s, date, 0).some((b) => b.kind !== "income");
     const cached = s.faith.daily.find((d) => d.date === date);
-    const m = cached ?? pickLocalMessage(s.me, date);
+    const m = hasBill ? pickLocalMessage(s.me, date, 0, "financas") : (cached ?? pickLocalMessage(s.me, date));
     return { date, text: m.text.slice(0, 220) };
   });
 }

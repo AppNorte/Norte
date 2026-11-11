@@ -60,25 +60,16 @@ try {
   // ---------- Hoje ----------
   await page.getByRole("heading", { name: /Bom dia, Daylerson/ }).waitFor();
   await shot(page, "03-hoje");
-  const oracao = page.getByRole("checkbox", { name: "Oração" });
-  await oracao.click();
-  check("Hoje: marcar item da rotina", (await oracao.getAttribute("aria-checked")) === "true");
-  await page.reload();
-  await page.getByRole("heading", { name: /Bom dia/ }).waitFor();
-  check("Estado persiste após recarregar", (await page.getByRole("checkbox", { name: "Oração" }).getAttribute("aria-checked")) === "true");
-
-  await page.getByRole("button", { name: "Editar" }).first().click();
-  await page.getByLabel("Prioridade 1").fill("Finalizar o planejamento da semana");
-  await page.getByRole("button", { name: "Salvar prioridades" }).click();
-  check("Hoje: editar 3 prioridades", await page.getByText("Finalizar o planejamento da semana").isVisible());
-  check("Hoje: ver leitura", await page.getByText(/Hoje: João 1/).isVisible());
+  check("Hoje: compromissos do dia (convite para conectar o Google Agenda)", await page.getByRole("link", { name: "Conectar agora" }).isVisible());
+  check("Hoje: contas e saldo", (await page.getByRole("heading", { name: "Contas" }).isVisible()) && (await page.getByText("Previsto no fim do mês").isVisible()));
+  check("Hoje: lição do dia (Aprender)", await page.getByText("Aprender hoje").isVisible());
   check("Sem rolagem horizontal (390px) em Hoje", await noHorizontalScroll(page));
 
   // ---------- Navegação 5 abas ----------
   const tabs = [
+    ["Agenda", "/agenda"],
     ["Finanças", "/financas"],
-    ["Casa", "/casa"],
-    ["Rotina", "/rotina"],
+    ["Aprender", "/aprender"],
     ["Mais", "/mais"],
     ["Hoje", "/hoje"],
   ];
@@ -89,9 +80,19 @@ try {
     navOk &&= (await page.getByRole("navigation").getByRole("link", { name: label }).getAttribute("aria-current")) === "page";
   }
   check("Navegação por 5 abas funciona", navOk);
+  await page.goto(`${BASE}/mais`);
+  await page.locator("details.stored > summary").click();
+  check("Mais: rotina, casa e leitura guardadas (não sumiram)", (await page.locator("details.stored").getByRole("link", { name: "Rotina" }).isVisible()) && (await page.locator("details.stored").getByRole("link", { name: "Casa e compras" }).isVisible()));
+  // Estado persiste após recarregar (marcando um item na Rotina)
+  await page.goto(`${BASE}/rotina`);
+  const oracao = page.getByRole("checkbox", { name: /Momento em família/ }).first();
+  await oracao.click();
+  await page.reload();
+  await page.getByRole("heading", { name: "Seu progresso" }).waitFor();
+  check("Estado persiste após recarregar", (await page.getByRole("checkbox", { name: /Momento em família/ }).first().getAttribute("aria-checked")) === "true");
 
   // ---------- Rotina ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Rotina" }).click();
+  await page.goto(`${BASE}/rotina`);
   await page.getByRole("heading", { name: "Seu progresso" }).waitFor();
   await shot(page, "04-rotina");
   check("Rotina: plano progressivo (6h30 → 5h00)", (await page.getByText("6h30").first().isVisible()) && (await page.getByText("5h00").first().isVisible()));
@@ -130,8 +131,7 @@ try {
   await page.reload();
 
   // ---------- Leitura ----------
-  await page.goto(`${BASE}/mais`);
-  await page.getByRole("link", { name: /Leitura/ }).click();
+  await page.goto(`${BASE}/leitura`);
   await page.getByRole("heading", { name: "Bíblia" }).waitFor();
   check("Leitura: plano bíblico mostra progresso", await page.getByText("0 de 21 capítulos").isVisible());
   await page.getByRole("button", { name: "Ver detalhes" }).click();
@@ -168,8 +168,7 @@ try {
   check("Sem rolagem horizontal (390px) em Leitura", await noHorizontalScroll(page));
 
   // ---------- Família ----------
-  await page.goto(`${BASE}/mais`);
-  await page.getByRole("link", { name: /Família/ }).click();
+  await page.goto(`${BASE}/familia`);
   await page.getByRole("heading", { name: "Esta semana" }).waitFor();
   const names = await Promise.all(["Tempo com Bia", "Tempo com Isabella", "Tempo com Davi"].map((n) => page.getByText(n).isVisible()));
   check("Família: mostra Bia, Isabella e Davi", names.every(Boolean));
@@ -321,7 +320,7 @@ try {
 
 
   // ---------- Casa ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Casa" }).click();
+  await page.goto(`${BASE}/casa`);
   await page.getByRole("button", { name: "Adicionar item" }).first().click();
   await page.getByRole("dialog").getByLabel("Nome").fill("Arroz");
   await page.getByRole("dialog").getByLabel("Quantidade").fill("1");
@@ -393,9 +392,7 @@ try {
   check("Backup: arquivo com todos os dados", backup.app === "NORTE" && Array.isArray(backup.state.finance.transactions) && backup.state.pantry.items.length > 0);
 
   // ---------- Meu dia ----------
-  await page.getByRole("navigation").getByRole("link", { name: "Hoje" }).click();
-  await page.getByRole("link", { name: /ver meu dia/ }).click();
-  await page.waitForURL(/\/meu-dia\/?(\?.*)?$/);
+  await page.goto(`${BASE}/meu-dia`);
   await page.getByRole("button", { name: "Adicionar" }).first().click();
   await page.getByRole("dialog").getByLabel("O quê?").fill("Resolver pendência");
   await page.getByRole("dialog").getByLabel("Horário").fill("16:30");
@@ -418,6 +415,16 @@ try {
   await page.getByRole("button", { name: "Confirmar" }).waitFor({ timeout: 10000 });
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem("norte:v1")).routine.find((r) => r.title === "Academia").time);
   check("Assistente: ação mutável pede confirmação (nada muda antes)", before === "05:30");
+  // As prioridades saíram da tela Hoje; cria uma direto nos dados para o assistente remarcar.
+  await page.waitForTimeout(500);
+  await page.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem("norte:v1"));
+    st.priorities.push({ id: "p-e2e", title: "Finalizar o planejamento da semana", date: "2026-09-11", sortOrder: 1, status: "pending" });
+    st.updatedAt = Date.now();
+    localStorage.setItem("norte:v1", JSON.stringify(st));
+  });
+  await page.reload();
+  await page.getByLabel("Mensagem para o NORTE").waitFor();
   await page.getByLabel("Mensagem para o NORTE").fill("Não consegui finalizar o planejamento da semana");
   await page.getByRole("button", { name: "Enviar" }).click();
   await page.getByText(/Remarcar/).waitFor({ timeout: 10000 });
@@ -523,6 +530,26 @@ try {
   check("Resumo: esconder contas pendentes (e lembrar a escolha)", hidden && stillHidden);
   await billsCard.getByRole("button", { name: /Pagas no mês|Esconder pagas/ }).first().click().catch(() => {});
 
+  // ---------- Agenda (Google Agenda via iCal) ----------
+  await page.goto(`${BASE}/agenda`);
+  await page.getByPlaceholder(/calendar\.google\.com/).fill("https://exemplo.com/agenda.ics");
+  await page.getByRole("button", { name: "Conectar" }).click();
+  check("Agenda: recusa endereço que não é do Google Agenda", await page.getByText(/não parece o endereço iCal/).isVisible());
+  await page.getByPlaceholder(/calendar\.google\.com/).fill("https://calendar.google.com/calendar/ical/pt-br.brazilian%23holiday%40group.v.calendar.google.com/public/basic.ics");
+  await page.getByRole("button", { name: "Conectar" }).click();
+  await page.getByText("Google Agenda conectado", { exact: false }).first().waitFor({ timeout: 30000 });
+  check("Agenda: conecta o Google Agenda e lista os dias", (await page.getByRole("heading", { name: "Hoje" }).isVisible()) && (await page.getByRole("link", { name: /Novo compromisso/ }).isVisible()));
+  await page.goto(`${BASE}/hoje`);
+  check("Hoje: agenda conectada aparece no Hoje", await page.getByRole("heading", { name: "Compromissos de hoje" }).isVisible() && !(await page.getByRole("link", { name: "Conectar agora" }).isVisible()));
+
+  // ---------- Aprender ----------
+  await page.goto(`${BASE}/aprender`);
+  await page.getByRole("button", { name: "Ler a lição" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Marcar como lida" }).click();
+  check("Aprender: ler lição e marcar como lida", await page.getByText(/^1 de \d+ lidas$/).isVisible());
+  await page.getByRole("button", { name: "Quero ler" }).first().click();
+  check("Aprender: biblioteca de finanças (quero ler)", (await page.getByRole("button", { name: "Quero ler" }).first().getAttribute("aria-pressed")) === "true");
+
   // ---------- Avisos e Google Agenda ----------
   await page.goto(`${BASE}/financas`);
   await page.getByRole("button", { name: "Novo lançamento" }).click();
@@ -546,7 +573,7 @@ try {
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil", "/avisos"]) {
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil", "/avisos", "/agenda", "/aprender"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);
@@ -569,7 +596,7 @@ try {
   check("Computador: janela centralizada", Boolean(box && box.y >= 20 && box.y + box.height <= 780 && Math.abs(box.x + box.width / 2 - 640) < 4), JSON.stringify(box));
   await page.keyboard.press("Escape");
   let wide = true;
-  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/cartoes", "/financas/relatorios", "/casa", "/rotina", "/mais", "/leitura", "/assistente", "/conta", "/avisos", "/metas"]) {
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/cartoes", "/financas/relatorios", "/casa", "/rotina", "/mais", "/leitura", "/assistente", "/conta", "/avisos", "/metas", "/agenda", "/aprender"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

@@ -452,4 +452,19 @@ export interface AppState {
   faith: FaithState;
   me: MeProfile;
   growth: GrowthState;
+  calendar: CalendarState;
+  learn: LearnState;
+}
+
+// ---------- Agenda (Google Agenda) ----------
+
+export interface CalendarState {
+  icsUrl: string | null; // "Endereço secreto no formato iCal" do Google Agenda
+}
+
+// ---------- Aprender (finanças com base bíblica) ----------
+
+export interface LearnState {
+  read: string[]; // ids das lições lidas
+  books: Record<string, "want" | "done">; // biblioteca de finanças
 }

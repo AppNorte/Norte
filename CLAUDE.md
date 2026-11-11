@@ -17,7 +17,12 @@ Leia nesta ordem antes de alterar código:
 
 Construir uma PWA mobile-first de desenvolvimento pessoal: NORTE é um novo rumo na vida.
 
-V2 (aprovada pelo dono do produto): menu inferior com **Hoje · Finanças · Casa · Rotina · Mais**.
+V3 (decisão do dono do produto, nov/2026): foco em **Agenda + Finanças**, com tom cristão.
+Menu inferior: **Hoje · Agenda · Finanças · Aprender · Mais**. A Agenda lê o Google Agenda pelo
+"endereço secreto no formato iCal" (função `calendar` do Supabase). Rotina, Casa, Leitura, Família,
+Metas e Meu dia saíram do menu e ficam em "Mais → Recursos guardados" (dados preservados; não apagar).
+
+(Histórico) V2: menu inferior com Hoje · Finanças · Casa · Rotina · Mais.
 O Assistente NORTE é um botão flutuante (bússola) disponível nas telas principais.
 Em "Mais": Leitura, Família, Meu dia, Assistente, Conta/Nuvem e Ajustes (e, nas próximas etapas, Fé, Metas e Perfil).
 
@@ -30,7 +35,7 @@ Existe também a tela secundária `Meu dia` e um onboarding inicial. Ver `docs/P
 - Valores em dinheiro sempre em centavos inteiros; formatação pt-BR (R$).
 - Preserve o design premium, calmo e minimalista dos mockups.
 - Priorize Android mobile e telas estreitas, mas mantenha responsividade desktop.
-- O menu principal deve ter: Hoje, Finanças, Casa, Rotina, Mais (+ Assistente flutuante).
+- O menu principal deve ter: Hoje, Agenda, Finanças, Aprender, Mais (+ Assistente flutuante).
 - A IA deve operar por ferramentas autorizadas; não pode alterar banco diretamente.
 - Toda ação destrutiva ou de alteração importante feita pela IA deve pedir confirmação.
 - API keys somente no servidor / variáveis de ambiente.

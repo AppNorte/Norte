@@ -6,7 +6,22 @@
 // Segredos: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT. SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já existem nas funções.
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
-import { buildNotifications, DEFAULT_PREFS, localNow, type DayMessage, type PushMessage, type ReminderPrefs, type ReminderState } from "./reminders.ts";
+import ICAL from "npm:ical.js@2.1.0";
+import { buildNotifications, DEFAULT_PREFS, localNow, type DayEvent, type DayMessage, type PushMessage, type ReminderPrefs, type ReminderState } from "./reminders.ts";
+import { expandAgenda, validIcsUrl } from "./agenda.ts";
+
+/** Compromissos de hoje no Google Agenda do usuário (se ele conectou). Falhas não impedem os outros avisos. */
+async function todayEvents(state: ReminderState & { calendar?: { icsUrl?: string | null } }, date: string, tz: string): Promise<DayEvent[]> {
+  const url = validIcsUrl(state.calendar?.icsUrl ?? "");
+  if (!url) return [];
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    if (!r.ok) return [];
+    return expandAgenda(ICAL, await r.text(), date, 1, tz).map((e) => ({ title: e.title, time: e.time }));
+  } catch {
+    return [];
+  }
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -71,7 +86,8 @@ async function runSchedule() {
     const state = states.get(sub.user_id);
     await admin.from("push_subscriptions").update({ last_sent: date }).eq("endpoint", sub.endpoint);
     if (!state) continue;
-    for (const msg of buildNotifications(state, date, prefs, sub.prefs.messages ?? [])) {
+    const events = prefs.agenda !== false ? await todayEvents(state, date, sub.tz || "America/Sao_Paulo") : [];
+    for (const msg of buildNotifications(state, date, prefs, sub.prefs.messages ?? [], events)) {
       if (!(await send(sub, msg))) break;
       sent++;
     }

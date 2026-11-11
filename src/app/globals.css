@@ -4668,3 +4668,290 @@ details.more[open] {
 .bills-card.collapsed {
   padding-bottom: 16px;
 }
+
+/* =================== AGENDA =================== */
+.agenda-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.agenda-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.agenda-status small {
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+.agenda-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.agenda-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agenda-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.agenda-item:first-child {
+  border-top: 0;
+}
+
+.agenda-time {
+  flex: none;
+  width: 62px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.agenda-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.agenda-main b {
+  font-size: 15.5px;
+  font-weight: 600;
+}
+
+.agenda-main small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+
+.bill-item .agenda-time {
+  color: #b23a3a;
+  padding-left: 4px;
+}
+
+.agenda-today {
+  border: 1.5px solid var(--green-soft);
+}
+
+.agenda-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: center;
+  margin: 6px 0 12px;
+}
+
+.steps {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.steps a {
+  color: var(--green-dark);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@media (min-width: 1024px) {
+  .shell .sheet > .agenda-bar,
+  .shell .sheet > .agenda-foot,
+  .shell .sheet > .note.wide {
+    column-span: all;
+  }
+}
+
+/* =================== APRENDER =================== */
+.lesson-today {
+  display: grid;
+  gap: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, var(--green-soft) 140%);
+}
+
+.lesson-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.lesson-ref {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.lesson-ref b {
+  color: var(--green-dark);
+}
+
+.lesson-today .btn {
+  width: fit-content;
+}
+
+.lesson-row {
+  width: 100%;
+  text-align: left;
+  gap: 12px;
+}
+
+.lesson-dot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  color: #fff;
+}
+
+.lesson-dot.on {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.lesson p {
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+.lib-book {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.lib-book:first-child {
+  border-top: 0;
+}
+
+.lib-book .row-main b {
+  font-size: 15.5px;
+}
+
+.lib-why {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.lib-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lib-actions .chip {
+  min-height: 34px;
+  font-size: 13.5px;
+}
+
+/* Mais: recursos guardados */
+details.stored {
+  margin-top: 16px;
+  padding: 4px 16px 12px;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+details.stored > summary {
+  cursor: pointer;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.stored-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.side-stored > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.side-stored > summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .shell .sheet > details.stored {
+    column-span: all;
+  }
+}
+
+/* Hoje (agenda + finanças) */
+.hoje-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: var(--text-2);
+}
+
+.trio-mini {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lesson-mini {
+  display: grid;
+  gap: 4px;
+}
+
+.lesson-mini b {
+  font-size: 17px;
+}
+
+.lesson-mini small {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.4;
+}

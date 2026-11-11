@@ -1,4 +1,4 @@
-import type { FaithState, GrowthState, MeProfile, PantryState } from "./types";
+import type { CalendarState, FaithState, GrowthState, LearnState, MeProfile, PantryState } from "./types";
 
 export function defaultPantry(): PantryState {
   return { items: [], shopping: [], prices: [] };
@@ -14,4 +14,12 @@ export function defaultMe(): MeProfile {
 
 export function defaultGrowth(): GrowthState {
   return { goals: [], habits: [], moods: [], reviews: [] };
+}
+
+export function defaultCalendar(): CalendarState {
+  return { icsUrl: null };
+}
+
+export function defaultLearn(): LearnState {
+  return { read: [], books: {} };
 }
