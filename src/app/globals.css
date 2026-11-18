@@ -4955,3 +4955,269 @@ details.stored > summary {
   font-size: 14px;
   line-height: 1.4;
 }
+
+/* Importar extrato: lista editável e saldo final */
+.import-list {
+  max-height: 46dvh;
+  overflow-y: auto;
+  margin: 6px 0 10px;
+}
+
+.import-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.import-row.open {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 0 8px 10px;
+}
+
+.import-edit {
+  display: grid;
+  gap: 8px;
+  padding: 4px 4px 0;
+}
+
+.import-edit .field {
+  margin-bottom: 0;
+}
+
+.import-balance {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.import-balance small {
+  color: var(--text-2);
+}
+
+.import-balance .field {
+  margin-bottom: 0;
+}
+
+/* Contas: ações por conta (importar extrato, movimentações, ajustar saldo) */
+.acc-row {
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.acc-actions {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 52px;
+}
+
+.acc-actions .chip {
+  min-height: 32px;
+  font-size: 13px;
+  padding: 0 10px;
+  gap: 5px;
+}
+
+/* =================== SENHA DO APP =================== */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: calc(var(--safe-t) + 24px) 24px calc(var(--safe-b) + 24px);
+  background: radial-gradient(120% 80% at 50% 0%, #1d3d5c 0%, var(--navy) 55%, #0a1f33 100%);
+  color: #fff;
+  overflow-y: auto;
+}
+
+.lock-logo {
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  border: 3px solid #e8b04b;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 8px;
+}
+
+.pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+}
+
+.pin-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pin-sub {
+  margin: 6px 0 0;
+  opacity: 0.75;
+  font-size: 17px;
+  text-align: center;
+}
+
+.pin-dots {
+  display: flex;
+  gap: 22px;
+  margin: 26px 0 6px;
+}
+
+.pin-dots span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.85;
+}
+
+.pin-dots span.on {
+  background: currentColor;
+}
+
+.pin-dots.shake {
+  animation: pin-shake 0.42s;
+}
+
+@keyframes pin-shake {
+  20%,
+  60% {
+    transform: translateX(-10px);
+  }
+  40%,
+  80% {
+    transform: translateX(10px);
+  }
+}
+
+.pin-error {
+  min-height: 22px;
+  margin: 0 0 8px;
+  color: #ffb4a8;
+  font-size: 14.5px;
+  text-align: center;
+}
+
+.pin-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 76px);
+  gap: 16px 26px;
+}
+
+.pin-key {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  font-size: 30px;
+  font-weight: 400;
+  color: inherit;
+}
+
+.pin-key:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pin-key.ghost {
+  border-color: transparent;
+}
+
+.pin-forgot {
+  font-size: 14.5px;
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* Dentro de uma janela (criar/trocar senha): cores claras */
+.modal .pin {
+  margin: 0 auto 8px;
+  color: var(--text);
+}
+
+.modal .pin-key {
+  border-color: var(--border);
+  background: var(--card);
+}
+
+.modal .pin-key.ghost {
+  background: transparent;
+}
+
+.modal .pin-error {
+  color: #b23a3a;
+}
+
+@media (max-height: 700px) {
+  .pin-key {
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+  }
+  .pin-keys {
+    grid-template-columns: repeat(3, 64px);
+    gap: 12px 22px;
+  }
+  .lock-logo {
+    width: 84px;
+    height: 84px;
+  }
+}
+
+/* Importar: conferências do extrato */
+.import-check {
+  margin: 10px 0 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.import-check.ok {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.import-check.bad {
+  background: #fde8e6;
+  color: #9b2c2c;
+  border: 1px solid #f3b9b3;
+}
+
+.import-check ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.import-row.wrong {
+  background: #fdecea;
+  border-radius: 12px;
+  outline: 1px solid #f3b9b3;
+}
+
+.import-wrong-hint,
+.import-blocked {
+  margin: 0;
+  color: #9b2c2c;
+  font-size: 13.5px;
+}
+
+.import-blocked {
+  margin-bottom: 8px;
+  text-align: center;
+}

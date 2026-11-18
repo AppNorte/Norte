@@ -570,6 +570,66 @@ try {
   check("Lançamento: botão Lembrar no Google Agenda", await page.getByRole("dialog").getByRole("link", { name: /Google Agenda/ }).isVisible());
   await page.keyboard.press("Escape");
 
+  // ---------- Importar extrato em PDF (formato Santander, dados fictícios) ----------
+  await page.goto(`${BASE}/financas/contas`);
+  await page.getByRole("button", { name: "Importar extrato de Conta principal" }).click();
+  await page.getByRole("dialog").locator('input[type=file]').setInputFiles("scripts/fixtures/extrato-santander-exemplo.pdf");
+  await page.locator(".import-check").waitFor({ timeout: 20000 });
+  const dlgI = page.getByRole("dialog");
+  check("Importar PDF: conferências batem (Santander)", (await dlgI.locator(".import-check.ok").count()) === 1 && (await dlgI.locator(".import-row").count()) === 6);
+  check("Importar PDF: descrição “Tipo - Nome” e transferência sugerida", (await dlgI.getByText("Pix enviado - Padaria Exemplo").isVisible()) && (await dlgI.getByText(/transferência/).first().isVisible()));
+  check("Importar PDF: saldo final do extrato no ajuste", (await dlgI.getByLabel("Saldo final do extrato").inputValue()) === "850,00");
+  // Corrompe um valor: aviso vermelho e botão bloqueado; corrige e libera
+  await dlgI.getByRole("button", { name: "Editar Pix enviado - Padaria Exemplo" }).click();
+  await dlgI.getByLabel("Valor do lançamento").fill("39,55");
+  const blockedNow = (await dlgI.locator(".import-check.bad").isVisible()) && (await dlgI.locator(".import-row.wrong").count()) === 1 && (await dlgI.getByRole("button", { name: /^Importar \d/ }).isDisabled());
+  await dlgI.getByLabel("Valor do lançamento").fill("29,55");
+  check("Importar PDF: linha errada em vermelho bloqueia; corrigir libera", blockedNow && (await dlgI.locator(".import-check.ok").isVisible()) && (await dlgI.getByRole("button", { name: /^Importar \d/ }).isEnabled()));
+  await dlgI.getByRole("button", { name: /^Importar \d/ }).click();
+  const afterImp = await page.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem("norte:v1")).finance;
+    return {
+      poup: st.accounts.some((a) => a.name === "Poupança" && a.type === "savings"),
+      transfer: st.transactions.some((t) => t.kind === "transfer" && t.amount === 20000),
+      cats: ["Compras no débito", "Contas e boletos"].every((n) => st.categories.some((c) => c.name === n)),
+      count: st.transactions.filter((t) => /Exemplo|Teste|Remuneracao/.test(t.description)).length,
+    };
+  });
+  check("Importar PDF: lançamentos, transferência para Poupança e categorias novas", afterImp.poup && afterImp.transfer && afterImp.cats && afterImp.count === 6, JSON.stringify(afterImp));
+  // Extrato genérico (outro banco)
+  await page.getByRole("button", { name: "Importar extrato de Conta principal" }).click();
+  await page.getByRole("dialog").locator('input[type=file]').setInputFiles("scripts/fixtures/extrato-exemplo.pdf");
+  await page.getByRole("dialog").locator(".import-row").first().waitFor({ timeout: 20000 });
+  check(
+    "Importar PDF: leitura genérica (outros bancos) com saldo final",
+    (await page.getByRole("dialog").locator(".import-row").count()) === 4 && /^1\.?340,65$/.test(await page.getByRole("dialog").getByLabel("Saldo final do extrato").inputValue()),
+  );
+  await page.keyboard.press("Escape");
+
+  // ---------- Senha do app ----------
+  const pin = async (digits) => {
+    for (const d of digits) await page.getByRole("button", { name: d, exact: true }).last().click();
+    await page.waitForTimeout(250);
+  };
+  await page.goto(`${BASE}/conta`);
+  await page.getByRole("button", { name: "Criar senha" }).click();
+  await pin("1234");
+  await pin("1234");
+  await page.getByText("Ligada neste aparelho.").waitFor();
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+  await page.getByText("Digite sua senha").waitFor();
+  check("Senha: pede a senha ao abrir o app", await page.locator(".lock-screen").isVisible());
+  await pin("0000");
+  check("Senha: senha errada é recusada", await page.getByText(/Senha incorreta/).isVisible());
+  await pin("1234");
+  await page.getByRole("heading", { name: "Conta e nuvem" }).waitFor();
+  check("Senha: senha certa abre o app", !(await page.locator(".lock-screen").isVisible()));
+  await page.getByRole("button", { name: "Remover senha" }).click();
+  await pin("1234");
+  await page.getByRole("button", { name: "Criar senha" }).waitFor();
+  check("Senha: remover a senha", true);
+
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;

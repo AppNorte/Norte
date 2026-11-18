@@ -2,6 +2,7 @@
 
 import { AuthPanel } from "@/components/AuthPanel";
 import { BackupCard } from "@/components/BackupCard";
+import { SecurityCard } from "@/components/SecurityCard";
 import { Hero } from "@/components/Hero";
 import { Card, CardHead } from "@/components/ui";
 
@@ -11,6 +12,7 @@ export default function Conta() {
       <Hero title="Conta e nuvem" sub="Seus dados seguros e com você." quote="Guarde o que importa." />
       <div className="sheet">
         <AuthPanel />
+        <SecurityCard />
         <BackupCard />
         <Card>
           <CardHead title="Como funciona" />

@@ -635,10 +635,11 @@ export function cardsOverview(f: FinanceState, month: string, today = toDateKey(
 }
 
 /** Cria um lançamento de ajuste para o saldo da conta ficar igual ao informado. */
-export function adjustBalance(s: AppState, accountId: string, realBalance: number, date = toDateKey()) {
+/** Cria um "Ajuste de saldo" para a conta bater com o banco. `atDate`: compara com o saldo naquela data (ex.: saldo final de um extrato). */
+export function adjustBalance(s: AppState, accountId: string, realBalance: number, date = toDateKey(), atDate = false) {
   const acc = s.finance.accounts.find((a) => a.id === accountId);
   if (!acc) return 0;
-  const diff = realBalance - accountBalance(s.finance, acc);
+  const diff = realBalance - accountBalance(s.finance, acc, atDate ? date : undefined);
   if (!diff) return 0;
   s.finance.transactions.push({
     id: uid(),

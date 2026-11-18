@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Archive, SlidersHorizontal } from "lucide-react";
+import { Archive, FileUp, ListOrdered, SlidersHorizontal } from "lucide-react";
+import { ImportSheet } from "@/components/finance/ImportSheet";
 import { Card, Cta, Field, Modal, Toggle, useToast } from "@/components/ui";
 import { ACCOUNT_TYPE_LABEL } from "@/components/finance/FinIcon";
 import { BankBadge, BankPicker, FinanceShell, MonthSwitch, useFinMonth } from "@/components/finance/Shell";
@@ -17,6 +19,7 @@ export default function Contas() {
   const [month, setMonth] = useFinMonth();
   const [edit, setEdit] = useState<FinAccount | "new" | null>(null);
   const [adjust, setAdjust] = useState<FinAccount | null>(null);
+  const [importFor, setImportFor] = useState<string | null>(null);
   const end = dateInMonth(month, daysInMonth(month));
   const accounts = f.accounts.filter((a) => !a.archived);
   const included = accounts.filter((a) => a.includeInTotal !== false);
@@ -58,21 +61,30 @@ export default function Contas() {
                   <b className={bal < 0 ? "neg" : ""}>{money(bal, hide)}</b>
                   {prev !== bal && <small>prev. {money(prev, hide)}</small>}
                 </span>
-                <button type="button" className="icon-btn" aria-label={`Ajustar saldo de ${a.name}`} onClick={() => setAdjust(a)}>
-                  <SlidersHorizontal size={18} />
-                </button>
+                <div className="acc-actions">
+                  <button type="button" className="chip" onClick={() => setImportFor(a.id)} aria-label={`Importar extrato de ${a.name}`}>
+                    <FileUp size={15} /> Importar extrato
+                  </button>
+                  <Link href={`/financas/transacoes?conta=${a.id}`} className="chip" aria-label={`Movimentações de ${a.name}`}>
+                    <ListOrdered size={15} /> Movimentações
+                  </Link>
+                  <button type="button" className="chip" aria-label={`Ajustar saldo de ${a.name}`} onClick={() => setAdjust(a)}>
+                    <SlidersHorizontal size={15} /> Ajustar saldo
+                  </button>
+                </div>
               </li>
             );
           })}
         </ul>
       </Card>
-      <Cta onClick={() => setEdit("new")} tagline="Toque numa conta para editar. O ícone de ajuste acerta o saldo com o do banco.">
+      <Cta onClick={() => setEdit("new")} tagline="Toque numa conta para editar. Importe o extrato em PDF para conferir lançamentos e saldo.">
         Adicionar conta
       </Cta>
 
       <Modal open={edit !== null} onClose={() => setEdit(null)} title={edit === "new" ? "Nova conta" : "Editar conta"}>
         {edit !== null && <AccountEditor key={edit === "new" ? "new" : edit.id} account={edit === "new" ? undefined : edit} onClose={() => setEdit(null)} />}
       </Modal>
+      <ImportSheet open={importFor !== null} accountId={importFor} onClose={() => setImportFor(null)} />
       <Modal open={adjust !== null} onClose={() => setAdjust(null)} title={adjust ? `Ajustar saldo · ${adjust.name}` : ""}>
         {adjust && <AdjustForm account={adjust} onClose={() => setAdjust(null)} />}
       </Modal>

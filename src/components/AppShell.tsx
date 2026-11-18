@@ -8,6 +8,7 @@ import { BottomNav } from "./BottomNav";
 import { Compass } from "./Compass";
 import { PushRefresher } from "./PushRefresher";
 import { SideNav } from "./SideNav";
+import { AppLock } from "./AppLock";
 
 /** Envolve as telas internas: garante onboarding feito e mostra o menu inferior. */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -28,16 +29,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="shell">
-      <SideNav />
-      <main>{children}</main>
-      <PushRefresher />
-      {!path.startsWith("/assistente") && (
-        <Link href="/assistente" className="fab-ai" aria-label="Falar com o Assistente NORTE">
-          <Compass size={34} ring={false} />
-        </Link>
-      )}
-      <BottomNav />
-    </div>
+    <AppLock>
+      <div className="shell">
+        <SideNav />
+        <main>{children}</main>
+        <PushRefresher />
+        {!path.startsWith("/assistente") && (
+          <Link href="/assistente" className="fab-ai" aria-label="Falar com o Assistente NORTE">
+            <Compass size={34} ring={false} />
+          </Link>
+        )}
+        <BottomNav />
+      </div>
+    </AppLock>
   );
 }

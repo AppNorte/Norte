@@ -36,6 +36,8 @@ export default function Transacoes() {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (t === "income" || t === "expense" || t === "transfer") setTipo(t);
     if (t === "pendentes") setSit("pending");
+    const conta = new URLSearchParams(window.location.search).get("conta");
+    if (conta) setWhere(`acc:${conta}`);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 

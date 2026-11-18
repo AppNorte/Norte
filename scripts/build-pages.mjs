@@ -9,6 +9,8 @@ const api = path.resolve("src/app/api");
 const parked = path.resolve(".api-parked");
 const moved = fs.existsSync(api);
 if (moved) fs.renameSync(api, parked);
+// Leitor de PDF (extratos): o "worker" do pdf.js precisa estar em public/, na mesma versão instalada.
+fs.copyFileSync(path.resolve("node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs"), path.resolve("public/pdf.worker.min.mjs"));
 try {
   execSync("npx next build", { stdio: "inherit", env: { ...process.env, GITHUB_PAGES: "true" } });
   fs.writeFileSync(path.resolve("out/.nojekyll"), "");
