@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SideNav />
         <main>{children}</main>
         <PushRefresher />
-        {!path.startsWith("/assistente") && (
+        {!path.startsWith("/assistente") && !path.startsWith("/conselheiro") && (
           <Link href="/assistente" className="fab-ai" aria-label="Falar com o Assistente NORTE">
             <Compass size={34} ring={false} />
           </Link>

@@ -550,6 +550,21 @@ try {
   await page.getByRole("button", { name: "Quero ler" }).first().click();
   check("Aprender: biblioteca de finanças (quero ler)", (await page.getByRole("button", { name: "Quero ler" }).first().getAttribute("aria-pressed")) === "true");
 
+  // ---------- Conselheiro com IA (servidor simulado) ----------
+  await page.route("**/functions/v1/advisor", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ configured: false, limit: 40 }) }));
+  await page.goto(`${BASE}/aprender`);
+  await page.getByRole("link", { name: /Conselheiro com IA/ }).click();
+  await page.getByText("A IA ainda não foi ligada").waitFor();
+  check("Conselheiro: avisa quando a IA não está ligada", true);
+  await page.unroute("**/functions/v1/advisor");
+  await page.route("**/functions/v1/advisor", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ configured: true, limit: 40 }) }));
+  await page.reload();
+  await page.getByText("Entre na sua conta").waitFor();
+  check("Conselheiro: exige login antes de enviar números à IA", await page.getByLabel("Pergunta para o conselheiro").isDisabled());
+  const snap = await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem("norte:v1")).finance).length > 0);
+  check("Conselheiro: dados financeiros disponíveis para o resumo", snap);
+  await page.unroute("**/functions/v1/advisor");
+
   // ---------- Avisos e Google Agenda ----------
   await page.goto(`${BASE}/financas`);
   await page.getByRole("button", { name: "Novo lançamento" }).click();
@@ -633,7 +648,7 @@ try {
   // ---------- 360px ----------
   await page.setViewportSize({ width: 360, height: 780 });
   let narrow = true;
-  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil", "/avisos", "/agenda", "/aprender"]) {
+  for (const url of ["/hoje", "/financas", "/financas/transacoes", "/financas/contas", "/financas/cartoes", "/financas/orcamentos", "/financas/objetivos", "/financas/calendario", "/financas/relatorios", "/casa", "/mais", "/rotina", "/leitura", "/familia", "/meu-dia", "/assistente", "/conta", "/fe", "/metas", "/perfil", "/avisos", "/agenda", "/aprender", "/conselheiro"]) {
     await page.goto(`${BASE}${url}`);
     await page.locator(".sheet").waitFor();
     const ok = await noHorizontalScroll(page);

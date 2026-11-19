@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BellRing, BookOpen, CalendarClock, Cloud, Flame, ListChecks, Settings, ShoppingBasket, Target, UserRound, Users } from "lucide-react";
+import { BellRing, Sparkles, BookOpen, CalendarClock, Cloud, Flame, ListChecks, Settings, ShoppingBasket, Target, UserRound, Users } from "lucide-react";
 import { Compass } from "@/components/Compass";
 import { Hero } from "@/components/Hero";
 import { SettingsSheet } from "@/components/SettingsSheet";
@@ -18,6 +18,7 @@ export default function Mais() {
     { href: "/avisos", title: "Avisos", sub: "Notificações de contas e compromissos", icon: <BellRing size={24} /> },
     { href: "/fe", title: s.me.faith === "nenhuma" ? "Força diária" : "Fé e força", sub: "Mensagem do dia, gratidão e oração", icon: <Flame size={24} /> },
     { href: "/assistente", title: "Assistente", sub: "Pergunte ao NORTE", icon: <Compass size={26} ring={false} /> },
+    { href: "/conselheiro", title: "Conselheiro (IA)", sub: "Conselhos financeiros", icon: <Sparkles size={24} /> },
     { href: "/perfil", title: "Meu perfil", sub: "Para o NORTE te conhecer melhor", icon: <UserRound size={24} /> },
     {
       href: "/conta",

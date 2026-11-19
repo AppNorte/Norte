@@ -40,6 +40,12 @@ Em "Novo lançamento" (despesa): **Ler QR Code** (câmera ao vivo), **Tirar foto
 
 Estoque por local (despensa, geladeira, freezer…), categoria automática pelo nome, aviso do que está acabando e vencendo, lista de compras com preço, e "Concluir compra", que soma na despensa, guarda o histórico de preços e (opcional) lança o gasto em Finanças.
 
+## Conselheiro financeiro com IA
+
+- Tela `/conselheiro` (em Aprender e em Mais). O app monta um **resumo** dos números (`src/lib/advisor.ts`: totais do mês, categorias, maiores gastos, orçamentos, cartões, contas a vencer, objetivos) e envia à função `advisor` (`supabase/functions/advisor`), que chama o Claude (`claude-opus-5-5`, esforço `medium`, fallback automático em recusas).
+- Exige login e consentimento (Meu perfil → IA). Limite de 40 perguntas por usuário por dia (tabela `ai_usage`, `supabase/advisor.sql`).
+- Para ligar: crie uma chave em platform.claude.com (com créditos) e cadastre-a no Supabase em **Edge Functions → Secrets** com o nome `ANTHROPIC_API_KEY`. A chave nunca vai para o app nem para o repositório.
+
 ## Fé e força, Perfil e IA
 
 - Mensagem do dia: com `AI_PROVIDER=anthropic` e consentimento em **Meu perfil**, é escrita pela IA para o usuário (`/api/daily`); sem isso, vem da coleção local (`src/lib/faith/messages.ts`), escolhida pelos desafios do perfil.

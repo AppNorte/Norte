@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookMarked, Check as CheckIcon, ChevronRight, GraduationCap, Search } from "lucide-react";
+import { BookMarked, Check as CheckIcon, ChevronRight, GraduationCap, Search, Sparkles } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { Card, CardHead, Modal } from "@/components/ui";
 import { toDateKey } from "@/lib/dates";
@@ -27,6 +27,17 @@ export default function Aprender() {
     <>
       <Hero title="Aprender" sub="Finanças com sabedoria bíblica." quote={{ text: "Os planos bem elaborados levam à fartura.", ref: "Provérbios 21:5" }} />
       <div className="sheet">
+        <Link href="/conselheiro" className="card wide advisor-cta">
+          <span className="advisor-ico">
+            <Sparkles size={22} />
+          </span>
+          <span>
+            <b>Conselheiro com IA</b>
+            <small>Pergunte sobre o seu dinheiro e receba conselhos a partir dos seus números.</small>
+          </span>
+          <ChevronRight size={20} aria-hidden="true" />
+        </Link>
+
         <Card className="wide lesson-today">
           <span className="daily-kicker">
             <GraduationCap size={16} /> Lição de hoje

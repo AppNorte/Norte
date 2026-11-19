@@ -8,7 +8,7 @@ const TABS = [
   { href: "/hoje", label: "Hoje", Icon: House, match: ["/hoje"] },
   { href: "/agenda", label: "Agenda", Icon: CalendarDays, match: ["/agenda"] },
   { href: "/financas", label: "Finanças", Icon: Wallet, match: ["/financas"] },
-  { href: "/aprender", label: "Aprender", Icon: GraduationCap, match: ["/aprender"] },
+  { href: "/aprender", label: "Aprender", Icon: GraduationCap, match: ["/aprender", "/conselheiro"] },
   {
     href: "/mais",
     label: "Mais",

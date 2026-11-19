@@ -5221,3 +5221,53 @@ details.stored > summary {
   margin-bottom: 8px;
   text-align: center;
 }
+
+/* Conselheiro com IA */
+.advisor-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+  color: #fff;
+}
+
+.advisor-cta small {
+  display: block;
+  margin-top: 2px;
+  opacity: 0.8;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.advisor-cta > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.advisor-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffe3b5;
+}
+
+.rich p {
+  margin: 0 0 8px;
+}
+
+.rich p:last-child {
+  margin-bottom: 0;
+}
+
+.rich ul {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.rich li {
+  margin-bottom: 4px;
+}
